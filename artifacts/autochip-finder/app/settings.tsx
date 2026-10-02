@@ -2,9 +2,9 @@ import React, { useCallback, useState } from 'react';
 import { Alert, Pressable, Text, View, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ActionButton, Pill, Screen, SectionTitle, Surface, TopBar, formatBytes } from '@/components/common';
+import { ActionButton, Screen, SectionTitle, Surface, TopBar, formatBytes } from '@/components/common';
 import { useApp } from '@/context/AppContext';
-import { clearHistory, getStats, listDocuments, replacePageIndex, updateDocumentStatus, bundledDocuments } from '@/lib/database';
+import { getStats, listDocuments, replacePageIndex, updateDocumentStatus, bundledDocuments } from '@/lib/database';
 import { extractPdfPages } from '@/lib/pdf-index';
 import type { ThemePreference } from '@/constants/colors';
 
@@ -93,23 +93,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const clearSearchHistory = () => {
-    if (!db) return;
-    Alert.alert('Clear search history?', 'This does not remove your saved bookmarks or PDFs.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Clear history',
-        style: 'destructive',
-        onPress: () => {
-          void clearHistory(db).then(() => {
-            refresh();
-            Alert.alert('History cleared', 'Your saved PDFs and bookmarks are unchanged.');
-          });
-        },
-      },
-    ]);
-  };
-
   const themes: { value: ThemePreference; label: string; icon: 'moon' | 'sun' | 'smartphone' }[] = [
     { value: 'dark', label: 'Dark', icon: 'moon' },
     { value: 'light', label: 'Light', icon: 'sun' },
@@ -118,11 +101,11 @@ export default function SettingsScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <TopBar title="Settings" eyebrow="ON-DEVICE PREFERENCES" />
+      <TopBar title="Settings" />
       <SectionTitle title="Appearance" />
       <Surface style={styles.themeCard}>
         <Text style={[styles.cardHeading, { color: colors.foreground }]}>Color theme</Text>
-        <Text style={[styles.cardCopy, { color: colors.mutedForeground }]}>Choose a theme or follow your device setting.</Text>
+        <Text style={[styles.cardCopy, { color: colors.mutedForeground }]}>Light, dark, or match your device.</Text>
         <View style={styles.themeChoices}>
           {themes.map((item) => (
             <Pressable
@@ -158,69 +141,32 @@ export default function SettingsScreen() {
         <View style={[styles.statsDivider, { backgroundColor: colors.border }]} />
         <View style={styles.statsCell}>
           <Text numberOfLines={1} style={[styles.statsNumber, { color: colors.foreground }]}>{formatBytes(stats.storageBytes)}</Text>
-          <Text style={[styles.statsLabel, { color: colors.mutedForeground }]}>PDF files</Text>
+          <Text style={[styles.statsLabel, { color: colors.mutedForeground }]}>Storage</Text>
         </View>
       </Surface>
-      <ActionButton label="Open PDF library" icon="folder" variant="secondary" onPress={() => router.push('/(tabs)/library')} />
       <ActionButton label={rebuilding ? 'Rebuilding indexes…' : 'Rebuild PDF indexes'} icon="refresh-cw" loading={rebuilding} onPress={rebuildIndexes} />
       {progress ? <Text style={[styles.progressText, { color: colors.mutedForeground }]}>{progress}</Text> : null}
 
-      <SectionTitle title="Search data" />
-      <Surface style={styles.preferenceRow}>
-        <View style={[styles.preferenceIcon, { backgroundColor: colors.secondary }]}>
-          <Feather name="clock" size={16} color={colors.cyan} />
-        </View>
-        <View style={styles.preferenceInfo}>
-          <Text style={[styles.preferenceTitle, { color: colors.foreground }]}>Search history</Text>
-          <Text style={[styles.preferenceCopy, { color: colors.mutedForeground }]}>Clear recent queries without removing saved pages.</Text>
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Clear search history" onPress={clearSearchHistory} style={styles.clearAction}>
-          <Feather name="trash-2" size={17} color={colors.destructive} />
-        </Pressable>
-      </Surface>
-      <ActionButton label="Manage saved results" icon="bookmark" variant="secondary" onPress={() => router.push('/(tabs)/saved')} />
-      <Surface style={styles.privacyCard}>
-        <View style={[styles.privacyIcon, { backgroundColor: colors.accent }]}>
-          <Feather name="shield" size={17} color={colors.success} />
-        </View>
-        <View style={styles.privacyInfo}>
-          <Text style={[styles.privacyTitle, { color: colors.foreground }]}>Private by default</Text>
-          <Text style={[styles.privacyCopy, { color: colors.mutedForeground }]}>Your manuals, indexes, bookmarks, and search history are stored locally. AutoChip Finder does not use accounts or cloud sync.</Text>
-        </View>
-      </Surface>
-      <View style={styles.versionRow}>
-        <Pill label="VERSION 1.0.0" />
-        <Text style={[styles.versionCopy, { color: colors.mutedForeground }]}>AutoChip Finder · Programmer manual library</Text>
-      </View>
+      <Text style={[styles.privacyNote, { color: colors.mutedForeground }]}>
+        Your PDFs, indexes, bookmarks, and search history stay on this device.
+      </Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 14 },
+  content: { gap: 12 },
   themeCard: { gap: 6 },
-  cardHeading: { fontSize: 14, fontWeight: '700' },
-  cardCopy: { fontSize: 11, lineHeight: 16 },
+  cardHeading: { fontSize: 14, fontWeight: '600' },
+  cardCopy: { fontSize: 13, lineHeight: 19 },
   themeChoices: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  themeChoice: { flex: 1, minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderColor: 'transparent', borderRadius: 12 },
-  themeLabel: { fontSize: 11, fontWeight: '700' },
-  statsCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingVertical: 15 },
+  themeChoice: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderColor: 'transparent', borderRadius: 9 },
+  themeLabel: { fontSize: 13, fontWeight: '600' },
+  statsCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingVertical: 13 },
   statsCell: { flex: 1, alignItems: 'center', gap: 4 },
-  statsNumber: { fontSize: 15, fontWeight: '800' },
-  statsLabel: { fontSize: 9 },
+  statsNumber: { fontSize: 15, fontWeight: '600' },
+  statsLabel: { fontSize: 12 },
   statsDivider: { width: 1, height: 30 },
-  progressText: { fontSize: 10, marginTop: -7 },
-  preferenceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 13 },
-  preferenceIcon: { width: 35, height: 35, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  preferenceInfo: { flex: 1, gap: 3 },
-  preferenceTitle: { fontSize: 12, fontWeight: '700' },
-  preferenceCopy: { fontSize: 10, lineHeight: 15 },
-  clearAction: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  privacyCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 11 },
-  privacyIcon: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  privacyInfo: { flex: 1, gap: 4 },
-  privacyTitle: { fontSize: 12, fontWeight: '700' },
-  privacyCopy: { fontSize: 10, lineHeight: 15 },
-  versionRow: { alignItems: 'center', gap: 4, marginTop: 2 },
-  versionCopy: { fontSize: 9 },
+  progressText: { fontSize: 12, marginTop: -7 },
+  privacyNote: { fontSize: 13, lineHeight: 19 },
 });

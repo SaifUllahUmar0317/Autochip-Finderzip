@@ -41,17 +41,13 @@ export default function HistoryScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <TopBar title="Search history" eyebrow="RECENT LOOKUPS" right={
+      <TopBar title="Search history" right={
         items.length ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Clear search history" onPress={removeAll} style={styles.clearButton}>
             <Feather name="trash-2" size={17} color={colors.destructive} />
           </Pressable>
         ) : <View style={styles.clearSpacer} />
       } />
-      <View style={styles.headerCopy}>
-        <Text style={[styles.title, { color: colors.foreground }]}>Pick up where you left off.</Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Search history is stored on this device.</Text>
-      </View>
       <SectionTitle title={`Recent searches · ${items.length}`} />
       {items.length ? items.map((item) => (
         <Surface key={item.id} style={styles.historyItem}>
@@ -96,18 +92,15 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 15 },
-  clearButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  clearSpacer: { width: 38 },
-  headerCopy: { gap: 4, paddingTop: 4 },
-  title: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
-  subtitle: { fontSize: 11 },
+  content: { gap: 12 },
+  clearButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  clearSpacer: { width: 44 },
   historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, paddingHorizontal: 13, gap: 2 },
   openHistory: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  historyIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  historyIcon: { width: 36, height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   historyDetails: { flex: 1 },
-  query: { fontSize: 13, fontWeight: '700' },
-  meta: { fontSize: 10, marginTop: 4 },
-  removeIcon: { width: 34, height: 35, alignItems: 'center', justifyContent: 'center' },
+  query: { fontSize: 14, fontWeight: '600' },
+  meta: { fontSize: 12, marginTop: 4 },
+  removeIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   emptyCard: { padding: 2 },
 });

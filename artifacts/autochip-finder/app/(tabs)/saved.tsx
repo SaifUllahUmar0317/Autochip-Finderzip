@@ -41,20 +41,17 @@ export default function SavedScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <TopBar title="Saved results" eyebrow="YOUR SHORTLIST" right={
+      <TopBar title="Saved results" right={
         <Pressable accessibilityRole="button" accessibilityLabel="Search history" onPress={() => router.push('/history')} style={styles.topIcon}>
           <Feather name="clock" size={19} color={colors.foreground} />
         </Pressable>
       } />
-      <View style={styles.intro}>
-        <Text style={[styles.introTitle, { color: colors.foreground }]}>Keep useful matches close.</Text>
-        <Text style={[styles.introText, { color: colors.mutedForeground }]}>Bookmarks are stored locally and open at their saved page.</Text>
-      </View>
       <SectionTitle title={`Bookmarks · ${bookmarks.length}`} />
       {bookmarks.length ? bookmarks.map((item) => (
         <Surface key={item.id} style={styles.card}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={`Open ${item.displayName}, page ${item.pageNumber}`}
             onPress={() => router.push({ pathname: '/viewer', params: { documentId: item.documentId, page: item.pageNumber } })}
           >
             <View style={styles.cardTop}>
@@ -71,7 +68,6 @@ export default function SavedScreen() {
             <Text numberOfLines={1} style={[styles.fileName, { color: colors.mutedForeground }]}>{item.displayName}</Text>
           </Pressable>
           <View style={styles.cardActions}>
-            <ActionButton label="Open page" icon="book-open" compact onPress={() => router.push({ pathname: '/viewer', params: { documentId: item.documentId, page: item.pageNumber } })} />
             <ActionButton label="Remove" icon="bookmark" variant="quiet" compact onPress={() => removeBookmark(item)} />
           </View>
         </Surface>
@@ -85,37 +81,21 @@ export default function SavedScreen() {
           />
         </Surface>
       )}
-      <View style={[styles.historyLink, { backgroundColor: colors.secondary }]}>
-        <View style={styles.historyText}>
-          <Text style={[styles.historyTitle, { color: colors.foreground }]}>Search history</Text>
-          <Text style={[styles.historyDescription, { color: colors.mutedForeground }]}>Reopen recent part and chip lookups.</Text>
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open search history" onPress={() => router.push('/history')}>
-          <Feather name="arrow-right" size={19} color={colors.primary} />
-        </Pressable>
-      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 16 },
-  topIcon: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  intro: { gap: 5, paddingTop: 4 },
-  introTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
-  introText: { fontSize: 12, lineHeight: 18 },
-  card: { gap: 12 },
+  content: { gap: 12 },
+  topIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  card: { gap: 10 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  bookmarkIcon: { width: 33, height: 33, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  bookmarkIcon: { width: 36, height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   cardHeading: { flex: 1 },
-  cardTitle: { fontSize: 13, fontWeight: '700' },
-  cardMeta: { fontSize: 10, marginTop: 3 },
-  snippet: { fontSize: 12, lineHeight: 18 },
-  fileName: { fontSize: 10 },
+  cardTitle: { fontSize: 14, fontWeight: '600' },
+  cardMeta: { fontSize: 12, marginTop: 3 },
+  snippet: { fontSize: 13, lineHeight: 19 },
+  fileName: { fontSize: 12 },
   cardActions: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
   emptyCard: { padding: 2 },
-  historyLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, borderRadius: 16 },
-  historyText: { gap: 3 },
-  historyTitle: { fontSize: 13, fontWeight: '700' },
-  historyDescription: { fontSize: 11 },
 });

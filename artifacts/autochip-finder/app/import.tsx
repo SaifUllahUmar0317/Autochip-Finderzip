@@ -175,16 +175,7 @@ export default function ImportScreen() {
 
   return (
     <Screen keyboardAvoiding contentStyle={styles.content}>
-      <TopBar title="Add a PDF" eyebrow="IMPORT TO YOUR DEVICE" />
-      <View style={[styles.intro, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={[styles.introIcon, { backgroundColor: colors.accent }]}>
-          <Feather name="download-cloud" size={20} color={colors.primary} />
-        </View>
-        <View style={styles.introText}>
-          <Text style={[styles.introTitle, { color: colors.foreground }]}>Build your offline library</Text>
-          <Text style={[styles.introCopy, { color: colors.mutedForeground }]}>The PDF and its page index stay on this device. No account or network connection is needed.</Text>
-        </View>
-      </View>
+      <TopBar title="Add a PDF" />
 
       <View style={styles.section}>
         <SectionTitle title="Choose programmer" />
@@ -245,7 +236,6 @@ export default function ImportScreen() {
             <Feather name="check-circle" size={16} color={colors.success} />
             <Text style={[styles.summaryText, { color: colors.foreground }]}>Ready to add to {createNewModule ? (moduleName || 'new module') : (currentModuleName || 'a module')}</Text>
           </View>
-          <Text style={[styles.summarySub, { color: colors.mutedForeground }]}>PDF text is extracted page by page and indexed for local search.</Text>
         </Surface>
       ) : null}
       {error ? (
@@ -280,34 +270,28 @@ function getFirst(value: string | string[] | undefined): string {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 18 },
-  intro: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', padding: 15, borderRadius: 17, borderWidth: 1 },
-  introIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  introText: { flex: 1, gap: 5 },
-  introTitle: { fontSize: 14, fontWeight: '700' },
-  introCopy: { fontSize: 11, lineHeight: 17 },
+  content: { gap: 14 },
   section: { gap: 10 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toolChoices: { flexDirection: 'row', gap: 8 },
-  createModuleToggle: { paddingVertical: 7, paddingHorizontal: 4 },
-  createModuleText: { fontSize: 11, fontWeight: '700' },
+  createModuleToggle: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  createModuleText: { fontSize: 13, fontWeight: '600' },
   moduleChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   helperText: { fontSize: 12, lineHeight: 18 },
-  filePicker: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderRadius: 16, borderWidth: 1 },
-  filePickerIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  filePicker: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderRadius: 10, borderWidth: 1 },
+  filePickerIcon: { width: 42, height: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   filePickerText: { flex: 1, gap: 4 },
-  filePickerTitle: { fontSize: 13, fontWeight: '700' },
-  filePickerSub: { fontSize: 10 },
-  summary: { gap: 7, padding: 14 },
+  filePickerTitle: { fontSize: 14, fontWeight: '600' },
+  filePickerSub: { fontSize: 12 },
+  summary: { padding: 12 },
   summaryLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  summaryText: { fontSize: 12, fontWeight: '700', flex: 1 },
-  summarySub: { fontSize: 10, lineHeight: 15, marginLeft: 24 },
-  errorBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 12 },
-  errorText: { fontSize: 11, lineHeight: 17, flex: 1 },
+  summaryText: { fontSize: 13, fontWeight: '600', flex: 1 },
+  errorBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 12, borderRadius: 9 },
+  errorText: { fontSize: 12, lineHeight: 18, flex: 1 },
   progressBlock: { gap: 7 },
-  progressLabel: { fontSize: 11, fontWeight: '700' },
+  progressLabel: { fontSize: 13, fontWeight: '600' },
   progressTrack: { height: 5, borderRadius: 5, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 5 },
-  footer: { textAlign: 'center', fontSize: 10, lineHeight: 15, marginTop: -5 },
+  footer: { fontSize: 12, lineHeight: 18 },
   pressed: { opacity: 0.8 },
 });

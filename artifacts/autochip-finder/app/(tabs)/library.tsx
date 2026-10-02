@@ -3,7 +3,7 @@ import { Alert, Pressable, Text, View, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ActionButton, EmptyState, Pill, Screen, SectionTitle, Surface, TopBar, formatBytes, formatDate } from '@/components/common';
+import { ActionButton, EmptyState, Pill, Screen, SectionTitle, Surface, TopBar, formatBytes } from '@/components/common';
 import { useApp } from '@/context/AppContext';
 import {
   deleteDocument,
@@ -23,6 +23,7 @@ export default function LibraryScreen() {
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [modules, setModules] = useState<ModuleRow[]>([]);
   const [moduleFilter, setModuleFilter] = useState('all');
+  const [documentQuery, setDocumentQuery] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
@@ -36,7 +37,15 @@ export default function LibraryScreen() {
   }, [db]);
   useFocusEffect(useCallback(() => { load(); }, [load, revision]));
 
-  const visibleDocs = documents.filter((doc) => moduleFilter === 'all' || doc.moduleId === moduleFilter);
+  const normalizedQuery = documentQuery.trim().toLocaleLowerCase();
+  const moduleDocs = documents.filter((doc) => moduleFilter === 'all' || doc.moduleId === moduleFilter);
+  const visibleDocs = documents.filter((doc) =>
+    (moduleFilter === 'all' || doc.moduleId === moduleFilter) &&
+    (!normalizedQuery ||
+      doc.displayName.toLocaleLowerCase().includes(normalizedQuery) ||
+      doc.originalFilename.toLocaleLowerCase().includes(normalizedQuery) ||
+      doc.moduleName.toLocaleLowerCase().includes(normalizedQuery)),
+  );
 
   const remove = (doc: DocumentRow) => {
     Alert.alert(
@@ -97,18 +106,14 @@ export default function LibraryScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <TopBar title="PDF library" eyebrow="LOCAL DATABASE" right={
+      <TopBar title="PDF library" right={
         <Pressable accessibilityRole="button" accessibilityLabel="Add PDF" onPress={() => router.push('/import')} style={styles.topAction}>
           <Feather name="plus" size={20} color={colors.primary} />
         </Pressable>
       } />
       <View style={styles.libraryIntro}>
-        <View style={[styles.libraryIcon, { backgroundColor: colors.accent }]}>
-          <Feather name="folder" size={21} color={colors.primary} />
-        </View>
         <View style={styles.introText}>
-          <Text style={[styles.introTitle, { color: colors.foreground }]}>{documents.length} manuals indexed</Text>
-          <Text style={[styles.introCopy, { color: colors.mutedForeground }]}>Manage your offline reference collection.</Text>
+          <Text style={[styles.introTitle, { color: colors.foreground }]}>{visibleDocs.length} PDFs</Text>
         </View>
       </View>
       <View style={styles.filterRow}>
@@ -116,6 +121,17 @@ export default function LibraryScreen() {
         {modules.map((module) => (
           <Pill key={module.id} label={module.name} selected={moduleFilter === module.id} onPress={() => setModuleFilter(module.id)} />
         ))}
+      </View>
+      <View style={[styles.listSearch, { borderColor: colors.input, backgroundColor: colors.card }]}>
+        <Feather name="search" size={17} color={colors.mutedForeground} />
+        <TextField
+          value={documentQuery}
+          onChangeText={setDocumentQuery}
+          placeholder="Search PDFs"
+          accessibilityLabel="Search PDF names"
+          returnKeyType="search"
+          style={styles.searchInput}
+        />
       </View>
       <SectionTitle title="Documents" />
       {visibleDocs.length ? visibleDocs.map((doc) => (
@@ -130,7 +146,6 @@ export default function LibraryScreen() {
             </View>
             <View style={styles.documentInfo}>
               <Text numberOfLines={1} style={[styles.documentName, { color: colors.foreground }]}>{doc.displayName}</Text>
-              <Text numberOfLines={1} style={[styles.documentFilename, { color: colors.mutedForeground }]}>{doc.originalFilename}</Text>
               <Text style={[styles.documentMeta, { color: colors.mutedForeground }]}>
                 {doc.moduleName} · {doc.pageCount} pages · {formatBytes(doc.fileSize)}
               </Text>
@@ -146,7 +161,6 @@ export default function LibraryScreen() {
               }
               tone={doc.indexingStatus === 'ready' ? 'success' : doc.indexingStatus === 'failed' || doc.indexingStatus === 'no-text' ? 'warning' : 'default'}
             />
-            <Text style={[styles.importDate, { color: colors.mutedForeground }]}>{formatDate(doc.importedAt)}</Text>
           </View>
           {doc.indexError ? <Text style={[styles.errorText, { color: colors.warning }]}>{doc.indexError}</Text> : null}
           {renamingId === doc.id ? (
@@ -190,8 +204,8 @@ export default function LibraryScreen() {
         <Surface style={styles.emptySurface}>
           <EmptyState
             icon="file-plus"
-            title={moduleFilter === 'all' ? 'Your library is ready to grow' : 'No PDFs in this module yet'}
-            description="Add a PDF from your device. AutoChip Finder keeps its file and searchable text on this device."
+            title={!moduleDocs.length ? (moduleFilter === 'all' ? 'Your library is ready to grow' : 'No PDFs in this module yet') : 'No matching PDFs'}
+            description={!moduleDocs.length ? 'Add a PDF from your device to keep it available offline.' : 'Try a different file name or module filter.'}
             action={<ActionButton label="Add a PDF" icon="plus" onPress={() => router.push('/import')} />}
           />
         </Surface>
@@ -207,24 +221,22 @@ export default function LibraryScreen() {
 import { TextField } from '@/components/common';
 
 const styles = StyleSheet.create({
-  content: { gap: 15 },
-  topAction: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  libraryIntro: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 3 },
-  libraryIcon: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  content: { gap: 12 },
+  topAction: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  libraryIntro: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
   introText: { flex: 1 },
-  introTitle: { fontSize: 15, fontWeight: '700' },
-  introCopy: { fontSize: 12, marginTop: 3 },
+  introTitle: { fontSize: 14, fontWeight: '500' },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  documentCard: { gap: 12 },
+  listSearch: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 13, paddingRight: 8, borderWidth: 1, borderRadius: 10 },
+  searchInput: { flex: 1, minHeight: 48, borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0 },
+  documentCard: { gap: 9 },
   documentOpen: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   fileIcon: { width: 37, height: 37, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   documentInfo: { flex: 1 },
-  documentName: { fontSize: 13, fontWeight: '700' },
-  documentFilename: { fontSize: 10, marginTop: 2 },
-  documentMeta: { fontSize: 10, marginTop: 5 },
+  documentName: { fontSize: 14, fontWeight: '600' },
+  documentMeta: { fontSize: 12, marginTop: 4 },
   statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  importDate: { fontSize: 10 },
-  errorText: { fontSize: 11, lineHeight: 16 },
+  errorText: { fontSize: 12, lineHeight: 18 },
   documentActions: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   renameRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   renameInput: { flex: 1, minHeight: 40 },

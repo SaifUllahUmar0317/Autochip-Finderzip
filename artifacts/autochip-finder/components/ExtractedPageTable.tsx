@@ -112,11 +112,11 @@ export function ExtractedPageTable({
 
 const styles = StyleSheet.create({
   container: { gap: 9 },
-  title: { fontSize: 11, fontWeight: '600', lineHeight: 16 },
+  title: { fontSize: 14, fontWeight: '600', lineHeight: 20 },
   meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  metaText: { fontSize: 9, fontWeight: '600' },
+  metaText: { fontSize: 12, fontWeight: '500' },
   scrollContent: { flexGrow: 0 },
-  table: { borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
+  table: { borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
   row: { flexDirection: 'row' },
   headerCell: {
     minHeight: 42,
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     borderRightWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerText: { fontSize: 10, fontWeight: '800', lineHeight: 14 },
+  headerText: { fontSize: 12, fontWeight: '600', lineHeight: 17 },
   cell: {
     minHeight: 40,
     paddingHorizontal: 10,
@@ -135,6 +135,6 @@ const styles = StyleSheet.create({
     borderRightWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  cellText: { fontSize: 11, lineHeight: 16 },
-  note: { fontSize: 9, lineHeight: 14 },
+  cellText: { fontSize: 13, lineHeight: 19 },
+  note: { fontSize: 12, lineHeight: 18 },
 });

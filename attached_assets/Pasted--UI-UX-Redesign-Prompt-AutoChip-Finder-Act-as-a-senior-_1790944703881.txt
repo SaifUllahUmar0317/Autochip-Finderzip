@@ -1,0 +1,336 @@
+# UI/UX Redesign Prompt — AutoChip Finder
+
+Act as a **senior Android UI/UX designer and experienced mobile application developer**. I have already developed an Android application called **AutoChip Finder**, designed to search part numbers and chip numbers in CG100X and iProg Pro PDF files.
+
+The current application looks too much like an AI-generated design. Its theme, icons, layout, and visual elements feel artificial, overly decorative, and unnecessarily complicated.
+
+I want you to **redesign the entire user interface into a realistic, polished, professional Android application**, similar to a high-quality utility app developed by an experienced software company.
+
+**This is a UI/UX redesign task, not a request to rebuild the application.** First inspect the existing project and understand its current screens, functionality, navigation, and architecture. Then improve the design while preserving all existing features and application logic.
+
+## 1. Overall Design Philosophy
+
+Create an interface that feels:
+
+* Professional and realistic, like a commercial Android utility application.
+* Minimal, clean, and practical rather than flashy or futuristic.
+* Simple enough that a user can understand the app without reading lengthy instructions.
+* Consistent across all screens, with carefully selected colors, typography, spacing, and icons.
+* Natural and familiar to Android users, following established mobile UI conventions.
+* Focused on functionality, especially fast PDF searching and document management.
+
+Avoid the typical appearance of AI-generated interfaces, including excessive gradients, glowing effects, decorative shapes, oversized headings, unnecessary cards, and repetitive rounded containers.
+
+**The goal is a genuine, human-designed application interface—not a flashy promotional website inside an Android app.**
+
+## 2. Professional Color Theme
+
+Create a restrained, practical color palette suitable for an automotive electronics and diagnostic utility application.
+
+Use:
+
+* A neutral background with subtle contrast.
+* One primary accent color for important actions and selected states.
+* Dark, readable text on light backgrounds.
+* Muted secondary text for supporting information.
+* Subtle borders and dividers to organize content.
+* Carefully selected warning, success, and error colors.
+
+Avoid:
+
+* Too many accent colors.
+* Bright neon colors.
+* Excessive gradients.
+* Strong shadows around every element.
+* Large colored backgrounds behind ordinary text.
+* Random color combinations that make screens feel inconsistent.
+
+Choose a cohesive professional theme and apply it consistently throughout the application.
+
+## 3. Realistic Icons
+
+Replace all icons that look artificial, inconsistent, decorative, or AI-generated.
+
+Use **standard, recognizable icons from a consistent icon library**, such as Material Symbols or Material Icons.
+
+Requirements:
+
+* Use familiar icons for search, folders, PDF documents, settings, favorites, history, back navigation, filters, and other common actions.
+* Keep icon sizes and stroke or fill styles consistent.
+* Use simple monochrome icons by default.
+* Use the accent color only for selected or important actions.
+* Avoid emoji, cartoon icons, 3D icons, random illustrations, and unnecessary icon decorations.
+* Do not use icons when a simple text label or standard Android control would be clearer.
+
+Every icon must communicate a real action or meaningful category.
+
+## 4. Simple and Practical Home Screen
+
+Redesign the home screen to be clean and immediately understandable.
+
+Include:
+
+* A compact app bar with the AutoChip Finder name and a settings icon.
+* A prominent but appropriately sized global search field.
+* Two clear options for **CG100X** and **iProg Pro**.
+* A simple way to access recent searches or favorites, if these features already exist.
+* A small, unobtrusive indication of the number of imported PDFs, if useful.
+
+Do not fill the home screen with:
+
+* Long welcome messages.
+* Large promotional headings.
+* Unnecessary descriptions of what the application does.
+* Multiple statistics cards.
+* Decorative graphics.
+* Repeated buttons for the same action.
+
+Use a straightforward layout with sufficient spacing. Users should be able to start searching or open either tool immediately.
+
+## 5. Clean Tool and Module Screens
+
+Redesign the CG100X and iProg Pro screens to display their available modules clearly.
+
+Examples include:
+
+* Airbag
+* BCM
+* ECU
+* Dashboard
+* Other modules added by the user
+
+Use a simple list or a restrained grid, depending on which layout is more practical for the available modules.
+
+Each module item should have:
+
+* A recognizable, consistent icon where appropriate.
+* The module name.
+* A small count of associated PDFs or records, if available.
+* A clear indication that the item can be opened.
+
+Avoid creating a large decorative card for every module. Prefer compact, well-spaced rows or simple containers with subtle separators.
+
+The layout must adapt automatically when users add, rename, or remove modules through the existing GUI.
+
+## 6. Minimal Search Interface
+
+Make search the central experience of the application.
+
+The search screens should include:
+
+* A clear search field.
+* A simple search-type selector when needed.
+* Optional filters that remain hidden or compact until requested.
+* Search results displayed in a readable list.
+* Highlighted matching part numbers or chip numbers.
+* The source PDF name and page number.
+* A clear action to open the relevant PDF.
+
+Do not display lengthy explanations above the search results.
+
+Use concise labels such as:
+
+* Part number
+* Chip number
+* All
+* Filters
+* Results
+
+Avoid excessive information in each result. Show additional details only when they help the user identify the correct match.
+
+## 7. Professional PDF Viewer and Document Management
+
+Redesign the PDF viewing and management screens to feel like practical document tools.
+
+PDF viewer:
+
+* Use a standard document-viewing layout.
+* Provide a compact toolbar with back, page navigation, search, and other relevant actions.
+* Keep the document readable and give it as much screen space as possible.
+* Avoid decorative headers and unnecessary overlays.
+
+PDF management:
+
+* Use a clean list of imported PDF documents.
+* Show the file name, associated tool or module, and relevant file information.
+* Use standard actions for adding, replacing, removing, and opening PDFs.
+* Keep destructive actions separate and provide a confirmation when necessary.
+* Make adding a PDF through the existing file picker straightforward.
+
+Do not place multiple large buttons or explanatory paragraphs around every document.
+
+## 8. Typography and Spacing
+
+Use a professional, readable font system.
+
+Requirements:
+
+* Use standard Android typography or a carefully chosen modern sans-serif font.
+* Establish a clear hierarchy between screen titles, section labels, body text, and secondary information.
+* Keep titles appropriately sized rather than excessively large.
+* Avoid all-caps text everywhere.
+* Use consistent spacing between elements.
+* Align text, icons, and controls carefully.
+* Ensure important information is readable on smaller Android phones.
+
+Do not use too many font weights, font sizes, or decorative text styles.
+
+## 9. Light and Dark Themes
+
+Provide two carefully designed themes:
+
+* **Light mode:** clean neutral surfaces, readable dark text, and restrained accent colors.
+* **Dark mode:** comfortable dark surfaces, clear text contrast, and subtle distinctions between content areas.
+
+Both themes must look like complete, professionally designed interfaces.
+
+Ensure that:
+
+* Icons remain visible in both themes.
+* PDF management, search results, menus, dialogs, and navigation all follow the selected theme.
+* The selected theme is applied consistently throughout the application.
+* Theme switching is smooth and does not cause layout glitches.
+
+Avoid pure black backgrounds everywhere or excessive contrast that causes eye strain.
+
+## 10. Natural and Subtle Animations
+
+Keep animations minimal and purposeful.
+
+Use subtle transitions for:
+
+* Opening and closing screens.
+* Expanding filters.
+* Displaying search results.
+* Opening menus and dialogs.
+* Switching between light and dark themes, if supported naturally.
+
+Animations should feel smooth and responsive, not like a game or an advertisement.
+
+Avoid:
+
+* Constantly moving elements.
+* Bouncing buttons.
+* Flashing effects.
+* Unnecessary animated backgrounds.
+* Long transitions that slow down everyday tasks.
+
+The application must prioritize speed and usability over visual effects.
+
+## 11. Standard Android Interaction Patterns
+
+Use familiar Android controls wherever possible.
+
+Examples:
+
+* Standard app bars and navigation patterns.
+* Native-feeling buttons, menus, dialogs, and text fields.
+* Clear back navigation.
+* Touch-friendly controls.
+* Appropriate loading indicators.
+* Simple confirmation dialogs for destructive actions.
+* Clear feedback after importing or deleting a PDF.
+
+Do not invent unusual navigation patterns or require users to learn how the interface works.
+
+## 12. Remove Unnecessary Text and Visual Clutter
+
+This is a particularly important requirement.
+
+Review every screen and remove:
+
+* Repeated descriptions.
+* Long instructional paragraphs.
+* Unnecessary subtitles.
+* Redundant labels.
+* Empty decorative sections.
+* Repeated icons that add no meaning.
+* Excessive cards and containers.
+* Unnecessary buttons.
+* Large blocks of text that push the actual functionality down the screen.
+
+Use short labels and clear visual organization instead.
+
+For example, instead of displaying a long explanation about searching PDFs, simply show a search field with a helpful placeholder such as:
+
+**Search part number or chip number**
+
+Only show detailed instructions when a user explicitly opens a help section.
+
+## 13. Responsive Layout and Accessibility
+
+Ensure the redesigned interface:
+
+* Works properly on small and large Android phones.
+* Supports different screen densities.
+* Uses touch targets that are comfortable to tap.
+* Maintains readable text and sufficient contrast.
+* Handles long PDF file names and module names gracefully.
+* Avoids clipped text, overlapping icons, and unnecessary scrolling.
+* Supports Android system font scaling wherever practical.
+
+## 14. Preserve Existing Functionality
+
+Do not damage or remove any existing functionality during the redesign.
+
+Preserve:
+
+* CG100X and iProg Pro sections.
+* Dynamic module management.
+* PDF importing and indexing.
+* Individual module search.
+* Global smart search.
+* Part number and chip number search.
+* Search filters.
+* PDF viewer and page navigation.
+* Search history and favorites, if implemented.
+* Local database and offline functionality.
+* Light and dark themes.
+* Existing navigation and application architecture.
+
+If a screen needs structural changes to achieve the new design, make those changes without breaking the underlying functionality.
+
+Do not replace working features with static mockups or hardcoded sample data.
+
+## 15. Implementation Workflow
+
+Follow this workflow:
+
+**Phase 1 — Inspect**
+
+* Inspect the complete existing project.
+* Identify the UI framework, navigation system, theme configuration, reusable components, and all existing screens.
+* Identify which design elements currently make the app look artificial or cluttered.
+
+**Phase 2 — Establish the Design System**
+
+* Define a consistent color palette, typography scale, spacing system, icon style, and component rules.
+* Apply the same design language throughout the application.
+
+**Phase 3 — Redesign**
+
+* Redesign the home screen first.
+* Then update the tool screens, module lists, search screens, results, PDF viewer, document management, settings, and dialogs.
+* Reuse consistent components rather than creating a different style for every screen.
+
+**Phase 4 — Validate**
+
+* Run the application and inspect the actual screens.
+* Check both light and dark themes.
+* Test navigation, search, PDF importing, and document viewing.
+* Fix visual inconsistencies, layout problems, and interaction issues.
+
+**Phase 5 — Final Polish**
+
+* Remove any remaining unnecessary text, decorative elements, inconsistent icons, and oversized components.
+* Make sure the final app feels like a realistic, production-ready Android utility rather than an AI-generated demo.
+
+## Final Instruction
+
+Do not simply change the colors or add a new theme to the existing interface. **Reconsider the actual layout, component choices, typography, icons, spacing, and visual hierarchy.**
+
+Make the app look naturally designed by a professional Android UI/UX designer: simple, clean, realistic, modern, and highly usable.
+
+Keep the focus on one main purpose: **helping users find the correct part number or chip number in their CG100X and iProg Pro PDF documents as quickly and easily as possible.**
+
+Before finishing, build and run the application, inspect the redesigned screens, and fix any issues you find. Do not stop after producing design suggestions or screenshots—implement the redesign in the existing project.

@@ -86,7 +86,7 @@ export function TopBar({
         <Feather name="arrow-left" size={21} color={colors.foreground} />
       </Pressable>
       <View style={styles.topBarText}>
-        {eyebrow ? <Text style={[styles.eyebrow, { color: colors.cyan }]}>{eyebrow}</Text> : null}
+        {eyebrow ? <Text style={[styles.eyebrow, { color: colors.mutedForeground }]}>{eyebrow}</Text> : null}
         <Text numberOfLines={1} style={[styles.topBarTitle, { color: colors.foreground }]}>
           {title}
         </Text>
@@ -376,20 +376,20 @@ export const sharedStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   screen: { flex: 1 },
-  screenContent: { paddingHorizontal: 20, flexGrow: 1, gap: 16 },
+  screenContent: { paddingHorizontal: 20, flexGrow: 1, gap: 12 },
   topBar: { flexDirection: 'row', alignItems: 'center', minHeight: 52, gap: 10 },
-  backButton: { width: 38, height: 42, alignItems: 'flex-start', justifyContent: 'center' },
+  backButton: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   topBarText: { flex: 1, gap: 2 },
   topBarSpacer: { width: 32 },
-  topBarTitle: { fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
+  topBarTitle: { fontSize: 19, fontWeight: '600', letterSpacing: -0.2 },
+  eyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 0.7 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  sectionTitle: { fontSize: 17, fontWeight: '700', letterSpacing: -0.2 },
-  surface: { borderWidth: 1, borderRadius: 18, padding: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '600' },
+  surface: { borderWidth: 1, borderRadius: 10, padding: 12 },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
   actionButton: {
     minHeight: 46,
-    borderRadius: 14,
+    borderRadius: 10,
     paddingHorizontal: 16,
     borderWidth: 1,
     flexDirection: 'row',
@@ -397,23 +397,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  actionButtonCompact: { minHeight: 36, borderRadius: 11, paddingHorizontal: 11 },
+  actionButtonCompact: { minHeight: 44, borderRadius: 9, paddingHorizontal: 11 },
   actionLabel: { fontSize: 14, fontWeight: '700' },
   actionLabelCompact: { fontSize: 12 },
   disabled: { opacity: 0.48 },
-  iconButton: { minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
-  pill: { borderRadius: 30, paddingVertical: 7, paddingHorizontal: 11, alignSelf: 'flex-start' },
-  pillText: { fontSize: 11, fontWeight: '700' },
+  iconButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  pill: { minHeight: 44, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10, alignSelf: 'flex-start', justifyContent: 'center' },
+  pillText: { fontSize: 12, fontWeight: '600' },
   textField: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 10,
     minHeight: 48,
     paddingHorizontal: 14,
     fontSize: 15,
   },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 26, paddingVertical: 32 },
-  emptyIcon: { width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', textAlign: 'center', marginBottom: 6 },
+  emptyIcon: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 6 },
   emptyDescription: { fontSize: 13, lineHeight: 19, textAlign: 'center', maxWidth: 300 },
   emptyAction: { marginTop: 18 },
 });

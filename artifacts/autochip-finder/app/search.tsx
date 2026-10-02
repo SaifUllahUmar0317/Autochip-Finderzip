@@ -56,6 +56,7 @@ export default function SearchScreen() {
   const [selectedTool, setSelectedTool] = useState<ToolName | null>(routeTool ?? null);
   const [selectedModule, setSelectedModule] = useState(routeModule);
   const [selectedDocument, setSelectedDocument] = useState(routeDocument);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [tools, setTools] = useState<ToolName[]>([]);
   const [modules, setModules] = useState<ModuleRow[]>([]);
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
@@ -164,6 +165,7 @@ export default function SearchScreen() {
     (selectedTool === null || item.tool === selectedTool) &&
     (!selectedModule || item.moduleId === selectedModule),
   );
+  const activeFilterCount = Number(selectedTool !== null) + Number(Boolean(selectedModule)) + Number(Boolean(selectedDocument));
 
   const onToggleBookmark = async (result: SearchResult) => {
     if (!db) return;
@@ -189,13 +191,13 @@ export default function SearchScreen() {
 
   return (
     <Screen keyboardAvoiding contentStyle={styles.content}>
-      <TopBar title="Search manuals" eyebrow="GLOBAL PAGE INDEX" />
+      <TopBar title="Search manuals" />
       <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Feather name="search" size={19} color={colors.cyan} />
+        <Feather name="search" size={19} color={colors.mutedForeground} />
         <TextField
           value={query}
           onChangeText={setQuery}
-          placeholder="Part number, chip ID, brand…"
+          placeholder="Part number or chip number"
           accessibilityLabel="Search indexed PDF text"
           autoCapitalize="none"
           returnKeyType="search"
@@ -209,6 +211,28 @@ export default function SearchScreen() {
           </Pressable>
         ) : null}
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={filtersOpen ? 'Hide search filters' : `Show search filters${activeFilterCount ? `, ${activeFilterCount} active` : ''}`}
+        accessibilityState={{ expanded: filtersOpen }}
+        onPress={() => setFiltersOpen((open) => !open)}
+        style={({ pressed }) => [styles.filterToggle, { borderColor: colors.border }, pressed && styles.pressed]}
+      >
+        <Feather name="sliders" size={16} color={colors.mutedForeground} />
+        <Text style={[styles.filterToggleText, { color: colors.foreground }]}>
+          Filters{activeFilterCount ? ` · ${activeFilterCount} active` : ''}
+        </Text>
+        <Text numberOfLines={1} style={[styles.filterSummary, { color: colors.mutedForeground }]}>
+          {selectedDocument
+            ? documents.find((item) => item.id === selectedDocument)?.displayName
+            : selectedModule
+              ? modules.find((item) => item.id === selectedModule)?.name
+              : selectedTool ?? 'All manuals'}
+        </Text>
+        <Feather name={filtersOpen ? 'chevron-up' : 'chevron-down'} size={17} color={colors.mutedForeground} />
+      </Pressable>
+      {filtersOpen ? (
+        <View style={styles.filters}>
       <View style={styles.filterBlock}>
         <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>PROGRAMMER</Text>
         <View style={styles.filterRow}>
@@ -240,18 +264,14 @@ export default function SearchScreen() {
           </View>
         </View>
       ) : null}
+        </View>
+      ) : null}
       <View style={styles.resultHeading}>
         <SectionTitle title={query.trim() ? 'Matching pages' : 'Search the library'} />
         {loading ? <Text style={[styles.resultCount, { color: colors.mutedForeground }]}>Searching…</Text> : query.trim() ? <Text style={[styles.resultCount, { color: colors.mutedForeground }]}>{results.length}{hasMore ? '+' : ''} found</Text> : null}
       </View>
       {!query.trim() ? (
-        <Surface style={styles.hintCard}>
-          <View style={[styles.hintIcon, { backgroundColor: colors.accent }]}><Feather name="hash" size={18} color={colors.primary} /></View>
-          <View style={styles.hintText}>
-            <Text style={[styles.hintTitle, { color: colors.foreground }]}>Search text from every indexed page</Text>
-            <Text style={[styles.hintDescription, { color: colors.mutedForeground }]}>Try a part number, chip ID, vehicle, or manufacturer. Use filters to narrow the library.</Text>
-          </View>
-        </Surface>
+        <Text style={[styles.searchHint, { color: colors.mutedForeground }]}>Search indexed text across your offline library.</Text>
       ) : null}
       {query.trim() && !loading && results.length === 0 ? (
         <Surface style={styles.emptyCard}>
@@ -266,6 +286,7 @@ export default function SearchScreen() {
         <Surface key={`${result.documentId}-${result.pageNumber}`} style={styles.resultCard}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={`Open ${result.displayName}, page ${result.pageNumber}`}
             testID={`result-page-${result.pageNumber}`}
             onPress={() => router.push({ pathname: '/viewer', params: { documentId: result.documentId, page: result.pageNumber, q: query } })}
           >
@@ -280,12 +301,10 @@ export default function SearchScreen() {
               <Feather name="arrow-up-right" size={16} color={colors.mutedForeground} />
             </View>
             <View style={[styles.excerptBox, { backgroundColor: colors.background }]}>
-              <Text style={[styles.excerptLabel, { color: colors.mutedForeground }]}>SOURCE EXCERPT</Text>
               <HighlightedText text={result.snippet} query={query} numberOfLines={4} style={[styles.excerpt, { color: colors.secondaryForeground }]} />
             </View>
           </Pressable>
           <View style={styles.resultActions}>
-            <ActionButton label="Open page" icon="book-open" compact onPress={() => router.push({ pathname: '/viewer', params: { documentId: result.documentId, page: result.pageNumber, q: query } })} />
             <Pressable accessibilityRole="button" accessibilityLabel={savedKeys.has(`${result.documentId}:${result.pageNumber}`) ? 'Remove bookmark' : 'Bookmark result'} onPress={() => void onToggleBookmark(result)} style={styles.actionIcon}>
               <Feather name="bookmark" size={16} color={savedKeys.has(`${result.documentId}:${result.pageNumber}`) ? colors.primary : colors.mutedForeground} />
             </Pressable>
@@ -301,10 +320,6 @@ export default function SearchScreen() {
       {hasMore ? (
         <ActionButton label="Load more matching pages" icon="arrow-down" variant="secondary" loading={loadingMore} onPress={() => void showMore()} />
       ) : null}
-      <View style={styles.offlineNote}>
-        <Feather name="wifi-off" size={13} color={colors.success} />
-        <Text style={[styles.offlineText, { color: colors.mutedForeground }]}>Results are matched against text saved on this device.</Text>
-      </View>
     </Screen>
   );
 }
@@ -314,32 +329,30 @@ function first(value: string | string[] | undefined): string {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 14 },
-  searchBox: { minHeight: 52, borderRadius: 15, borderWidth: 1, paddingLeft: 14, paddingRight: 8, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  content: { gap: 12 },
+  searchBox: { minHeight: 52, borderRadius: 10, borderWidth: 1, paddingLeft: 14, paddingRight: 8, flexDirection: 'row', alignItems: 'center', gap: 10 },
   queryInput: { flex: 1, borderWidth: 0, backgroundColor: 'transparent', minHeight: 48, paddingHorizontal: 0 },
   clearButton: { width: 38, height: 42, alignItems: 'center', justifyContent: 'center' },
+  filterToggle: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9, borderBottomWidth: StyleSheet.hairlineWidth },
+  filterToggleText: { fontSize: 14, fontWeight: '500' },
+  filterSummary: { flex: 1, fontSize: 12, textAlign: 'right' },
+  filters: { gap: 13, paddingVertical: 4 },
   filterBlock: { gap: 7 },
-  filterLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
+  filterLabel: { fontSize: 12, fontWeight: '600' },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   resultHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   resultCount: { fontSize: 11, fontWeight: '600' },
-  hintCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 11 },
-  hintIcon: { width: 37, height: 37, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  hintText: { flex: 1, gap: 5 },
-  hintTitle: { fontSize: 13, fontWeight: '700' },
-  hintDescription: { fontSize: 11, lineHeight: 16 },
+  searchHint: { fontSize: 13 },
   emptyCard: { padding: 2 },
-  resultCard: { gap: 11, padding: 14 },
+  resultCard: { gap: 10, padding: 12, borderRadius: 10 },
   resultTop: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   pdfIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   resultTitles: { flex: 1 },
   resultDoc: { fontSize: 12, fontWeight: '700' },
-  resultMeta: { fontSize: 9, marginTop: 3 },
-  excerptBox: { borderRadius: 12, padding: 11, gap: 6 },
-  excerptLabel: { fontSize: 8, fontWeight: '800', letterSpacing: 1.2 },
-  excerpt: { fontSize: 12, lineHeight: 18 },
+  resultMeta: { fontSize: 12, marginTop: 3 },
+  excerptBox: { borderRadius: 8, padding: 10, gap: 6 },
+  excerpt: { fontSize: 13, lineHeight: 19 },
   resultActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionIcon: { width: 35, height: 36, alignItems: 'center', justifyContent: 'center' },
-  offlineNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 2 },
-  offlineText: { fontSize: 10 },
+  actionIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  pressed: { opacity: 0.72 },
 });

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActionButton, EmptyState, Pill, Screen, SectionTitle, Surface, TopBar, formatBytes } from '@/components/common';
+import { ActionButton, EmptyState, Pill, Screen, SectionTitle, Surface, TextField, TopBar, formatBytes } from '@/components/common';
 import { useApp } from '@/context/AppContext';
 import { getModule, listDocuments, type DocumentRow, type ModuleRow } from '@/lib/database';
 
@@ -13,6 +13,7 @@ export default function ModuleScreen() {
   const { colors, db, revision } = useApp();
   const [module, setModule] = useState<ModuleRow | null>(null);
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
+  const [documentQuery, setDocumentQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -37,6 +38,12 @@ export default function ModuleScreen() {
       </Screen>
     );
   }
+  const normalizedQuery = documentQuery.trim().toLocaleLowerCase();
+  const visibleDocuments = documents.filter((doc) =>
+    !normalizedQuery ||
+    doc.displayName.toLocaleLowerCase().includes(normalizedQuery) ||
+    doc.originalFilename.toLocaleLowerCase().includes(normalizedQuery),
+  );
 
   return (
     <Screen contentStyle={styles.content}>
@@ -45,21 +52,28 @@ export default function ModuleScreen() {
           <Feather name="plus" size={20} color={colors.primary} />
         </Pressable>
       } />
-      <View style={[styles.summary, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={[styles.summaryIcon, { backgroundColor: colors.accent }]}>
-          <Feather name="grid" size={22} color={colors.primary} />
-        </View>
-        <View style={styles.summaryInfo}>
-          <Text style={[styles.summaryTitle, { color: colors.foreground }]}>{documents.length} reference PDFs</Text>
-          <Text style={[styles.summaryMeta, { color: colors.mutedForeground }]}>{module.indexedPageCount.toLocaleString()} pages indexed · {documents.reduce((sum, doc) => sum + doc.fileSize, 0) ? formatBytes(documents.reduce((sum, doc) => sum + doc.fileSize, 0)) : '0 B'}</Text>
-        </View>
-      </View>
-      <ActionButton label={`Search ${module.name}`} icon="search" onPress={() => router.push({ pathname: '/search', params: { tool: module.tool, moduleId: module.id } })} />
+      <Text style={[styles.summaryMeta, { color: colors.mutedForeground }]}>
+        {documents.length} PDFs · {module.indexedPageCount.toLocaleString()} indexed pages · {documents.reduce((sum, doc) => sum + doc.fileSize, 0) ? formatBytes(documents.reduce((sum, doc) => sum + doc.fileSize, 0)) : '0 B'}
+      </Text>
+      <ActionButton label="Search" icon="search" onPress={() => router.push({ pathname: '/search', params: { tool: module.tool, moduleId: module.id } })} />
       <View style={styles.sectionHeading}>
         <SectionTitle title="Documents" />
         <Pill label={`${documents.length}`} />
       </View>
-      {documents.length ? documents.map((doc) => (
+      {documents.length > 1 ? (
+        <View style={[styles.listSearch, { borderColor: colors.input, backgroundColor: colors.card }]}>
+          <Feather name="search" size={17} color={colors.mutedForeground} />
+          <TextField
+            value={documentQuery}
+            onChangeText={setDocumentQuery}
+            placeholder="Filter PDFs"
+            accessibilityLabel="Filter PDFs by name"
+            returnKeyType="search"
+            style={styles.searchInput}
+          />
+        </View>
+      ) : null}
+      {visibleDocuments.length ? visibleDocuments.map((doc) => (
         <Surface key={doc.id} style={styles.documentCard}>
           <Pressable
             accessibilityRole="button"
@@ -80,7 +94,11 @@ export default function ModuleScreen() {
             <Text style={[styles.statusText, { color: colors.mutedForeground }]}>{doc.source === 'bundled' ? 'Included' : 'On device'}</Text>
           </View>
         </Surface>
-      )) : (
+      )) : documents.length ? (
+        <Surface style={styles.emptyCard}>
+          <EmptyState icon="search" title="No matching PDFs" description="Try a different file name." />
+        </Surface>
+      ) : (
         <Surface style={styles.emptyCard}>
           <EmptyState
             icon="file-plus"
@@ -95,21 +113,19 @@ export default function ModuleScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 15 },
-  addIcon: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  summary: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: 18, borderWidth: 1 },
-  summaryIcon: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  summaryInfo: { flex: 1 },
-  summaryTitle: { fontSize: 15, fontWeight: '700' },
-  summaryMeta: { fontSize: 10, marginTop: 4 },
-  sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 },
-  documentCard: { gap: 12 },
+  content: { gap: 12 },
+  addIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  summaryMeta: { fontSize: 13 },
+  listSearch: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 13, paddingRight: 8, borderWidth: 1, borderRadius: 10 },
+  searchInput: { flex: 1, minHeight: 48, borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0 },
+  sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  documentCard: { gap: 10 },
   documentRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   fileIcon: { width: 37, height: 37, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   documentInfo: { flex: 1 },
   documentName: { fontSize: 13, fontWeight: '700' },
-  documentMeta: { fontSize: 10, marginTop: 4 },
-  statusRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  statusText: { fontSize: 10, fontWeight: '600' },
+  documentMeta: { fontSize: 12, marginTop: 4 },
+  statusRow: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' },
+  statusText: { fontSize: 12, fontWeight: '500' },
   emptyCard: { padding: 2 },
 });

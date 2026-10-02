@@ -88,8 +88,8 @@ export default function AddProgrammerScreen() {
 
 const styles = StyleSheet.create({
   content: { flexGrow: 1, gap: 22 },
-  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, padding: 15, borderWidth: 1, borderRadius: 18 },
-  infoIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, padding: 12, borderWidth: 1, borderRadius: 10 },
+  infoIcon: { width: 42, height: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   infoCopy: { flex: 1, gap: 4 },
   infoTitle: { fontSize: 14, fontWeight: '800' },
   infoDescription: { fontSize: 12, lineHeight: 18 },

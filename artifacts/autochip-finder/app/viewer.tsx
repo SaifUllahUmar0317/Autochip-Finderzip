@@ -208,7 +208,7 @@ export default function ViewerScreen() {
             <Surface style={styles.sourceCard}>
               <View style={styles.sourceHeading}>
                 <View>
-                  <Text style={[styles.sourceLabel, { color: colors.cyan }]}>EXTRACTED SOURCE TEXT</Text>
+                  <Text style={[styles.sourceLabel, { color: colors.mutedForeground }]}>Text from this page</Text>
                   <Text style={[styles.sourcePageTitle, { color: colors.foreground }]}>Original page {pageNumber}</Text>
                 </View>
                 <Pressable accessibilityRole="button" accessibilityLabel="Share source page text" onPress={shareExcerpt} style={styles.actionIcon}>
@@ -245,28 +245,28 @@ function first(value: string | string[] | undefined): string {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 14 },
-  headerAction: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  content: { gap: 12 },
+  headerAction: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   loadingCard: { padding: 22, alignItems: 'center' },
   loadingText: { fontSize: 12 },
-  documentBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 13, borderRadius: 17, borderWidth: 1 },
-  fileIcon: { width: 39, height: 39, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  documentBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 10, borderWidth: 1 },
+  fileIcon: { width: 40, height: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   documentInfo: { flex: 1, gap: 4 },
-  documentTitle: { fontSize: 13, fontWeight: '700' },
-  documentMeta: { fontSize: 10 },
+  documentTitle: { fontSize: 14, fontWeight: '600' },
+  documentMeta: { fontSize: 12 },
   pageControl: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10, paddingVertical: 9 },
-  pageArrow: { width: 37, height: 37, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  pageArrow: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
   disabled: { opacity: 0.35 },
-  pageLabel: { fontSize: 8, fontWeight: '800', letterSpacing: 1, marginRight: 1 },
+  pageLabel: { fontSize: 12, fontWeight: '600', marginRight: 1 },
   pageInput: { minHeight: 38, width: 54, borderRadius: 10, textAlign: 'center', paddingHorizontal: 3, fontSize: 14, fontWeight: '700' },
   pageTotal: { fontSize: 11 },
-  matchBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
-  matchText: { fontSize: 11, fontWeight: '600', flex: 1 },
-  sourceCard: { gap: 14, padding: 17 },
+  matchBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 9 },
+  matchText: { fontSize: 13, fontWeight: '500', flex: 1 },
+  sourceCard: { gap: 12, padding: 12 },
   sourceHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sourceLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
-  sourcePageTitle: { fontSize: 16, fontWeight: '700', marginTop: 3 },
-  actionIcon: { width: 37, height: 37, alignItems: 'center', justifyContent: 'center' },
+  sourceLabel: { fontSize: 14, fontWeight: '600' },
+  sourcePageTitle: { fontSize: 16, fontWeight: '600', marginTop: 3 },
+  actionIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   noTextCard: { padding: 2 },
-  viewerNote: { textAlign: 'center', fontSize: 10, lineHeight: 15, paddingHorizontal: 8 },
+  viewerNote: { fontSize: 12, lineHeight: 18, paddingHorizontal: 2 },
 });
