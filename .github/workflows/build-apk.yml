@@ -38,6 +38,8 @@ jobs:
 
       - name: Build Standalone Release APK
         working-directory: artifacts/autochip-finder/android
+        env:
+          NODE_PATH: ${{ github.workspace }}/artifacts/autochip-finder/node_modules
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Rename and Prepare APK for Distribution
