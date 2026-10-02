@@ -30,7 +30,7 @@ jobs:
 
       - name: Install App Dependencies
         working-directory: artifacts/autochip-finder
-        run: npm ci
+        run: npm install --ignore-scripts
 
       - name: Make Gradlew Executable
         working-directory: artifacts/autochip-finder/android
@@ -40,7 +40,7 @@ jobs:
         working-directory: artifacts/autochip-finder/android
         env:
           NODE_PATH: ${{ github.workspace }}/artifacts/autochip-finder/node_modules
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Rename and Prepare APK for Distribution
         run: |
