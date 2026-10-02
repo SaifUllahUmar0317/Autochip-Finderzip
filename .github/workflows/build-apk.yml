@@ -32,10 +32,6 @@ jobs:
         working-directory: artifacts/autochip-finder
         run: npm ci
 
-      - name: Prebuild Native Android Project
-        working-directory: artifacts/autochip-finder
-        run: npx expo prebuild --platform android --clean
-
       - name: Make Gradlew Executable
         working-directory: artifacts/autochip-finder/android
         run: chmod +x gradlew
