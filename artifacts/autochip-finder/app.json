@@ -11,9 +11,10 @@
       "supportsTablet": false
     },
     "android": {
+      "package": "com.autochip.finder",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#07111f"
+        "backgroundColor": "#1b201f"
       }
     },
     "web": {
@@ -26,7 +27,7 @@
         {
           "image": "./assets/images/icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#07111f"
+          "backgroundColor": "#1b201f"
         }
       ],
       "expo-sqlite",
@@ -36,6 +37,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e16ce18a-541d-4683-8136-99c529d5057b"
+      }
+    },
+    "owner": "saifullahumar"
   }
 }

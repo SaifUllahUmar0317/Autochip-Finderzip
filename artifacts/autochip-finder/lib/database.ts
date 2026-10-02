@@ -1,5 +1,6 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import seedIndex from '@/data/seed-index.json';
+import { findPageTableHeaders, parsePageTable } from '@/lib/page-table';
 
 export type ToolName = string;
 export type IndexStatus = 'processing' | 'ready' | 'no-text' | 'failed';
@@ -46,6 +47,23 @@ export interface SearchResult {
   snippet: string;
   source: 'bundled' | 'imported';
   uri: string | null;
+  /** Column names parsed from the page table (e.g. Series, Brand, Part number, Chip) */
+  matchColumns?: string[];
+  /** All data rows from the page that match the query, with one entry per column */
+  matchRows?: string[][];
+}
+
+export interface SearchChipRecord {
+  id: number;
+  documentId: string;
+  pageNumber: number;
+  tool: ToolName;
+  moduleName: string;
+  displayName: string;
+  brand: string;
+  model: string;
+  partNumber: string;
+  chip: string;
 }
 
 export interface BookmarkRow {
@@ -97,6 +115,36 @@ export function createId(prefix: string): string {
 
 export function normalizeText(value: string): string {
   return value.normalize('NFKD').toLocaleLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+export function mapColumnsToRecord(
+  columns: string[],
+  cells: string[],
+): { brand: string; model: string; partNumber: string; chip: string } {
+  let brand = '';
+  let model = '';
+  let partNumber = '';
+  let chip = '';
+
+  columns.forEach((col, idx) => {
+    const norm = col.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const val = (cells[idx] || '').trim();
+    if (!val) return;
+    if (norm === 'brand') {
+      brand = val;
+    } else if (norm === 'chip' || norm === 'yearchip') {
+      chip = val;
+    } else if (norm === 'partnumber' || norm === 'number') {
+      partNumber = val;
+    } else if (norm === 'model' || norm === 'series' || norm === 'module') {
+      model = model ? `${model} ${val}` : val;
+    } else {
+      if (!partNumber) partNumber = val;
+      else if (!model) model = val;
+    }
+  });
+
+  return { brand, model, partNumber, chip };
 }
 
 function excerptFor(text: string, query: string): string {
@@ -164,6 +212,22 @@ const SCHEMA = `
     moduleId TEXT,
     createdAt INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS chip_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    documentId TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    pageNumber INTEGER NOT NULL,
+    tool TEXT NOT NULL,
+    moduleName TEXT NOT NULL,
+    displayName TEXT NOT NULL,
+    brand TEXT NOT NULL DEFAULT '',
+    model TEXT NOT NULL DEFAULT '',
+    partNumber TEXT NOT NULL DEFAULT '',
+    chip TEXT NOT NULL DEFAULT '',
+    searchTokens TEXT NOT NULL DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS chip_records_doc_page_idx ON chip_records(documentId, pageNumber);
+  CREATE INDEX IF NOT EXISTS chip_records_tokens_idx ON chip_records(searchTokens);
+  CREATE INDEX IF NOT EXISTS chip_records_tool_mod_idx ON chip_records(tool, moduleName);
   CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY NOT NULL,
     value TEXT NOT NULL
@@ -234,6 +298,46 @@ export async function initializeDatabase(): Promise<SQLiteDatabase> {
       }
       await db.runAsync(
         "INSERT INTO app_settings (key, value) VALUES ('seed_manifest_v1', 'done')",
+      );
+    });
+  }
+
+  const recordsSeeded = await db.getFirstAsync<{ value: string }>(
+    "SELECT value FROM app_settings WHERE key = 'records_manifest_v3'",
+  );
+  if (!recordsSeeded) {
+    await db.withTransactionAsync(async () => {
+      await db.runAsync('DELETE FROM chip_records WHERE documentId LIKE "seed-%"');
+      for (const doc of bundledDocuments) {
+        const headers = findPageTableHeaders(doc.pages[0]?.text ?? '');
+        for (const page of doc.pages) {
+          const table = parsePageTable(page.text, headers);
+          for (const row of table.rows) {
+            const rec = mapColumnsToRecord(table.columns, row);
+            if (rec.brand || rec.model || rec.partNumber || rec.chip) {
+              const searchTokens = (rec.brand + ' ' + rec.model + ' ' + rec.partNumber + ' ' + rec.chip)
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '');
+              await db.runAsync(
+                `INSERT INTO chip_records (documentId, pageNumber, tool, moduleName, displayName, brand, model, partNumber, chip, searchTokens)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                doc.id,
+                page.pageNumber,
+                doc.tool,
+                doc.module,
+                doc.displayName,
+                rec.brand,
+                rec.model,
+                rec.partNumber,
+                rec.chip,
+                searchTokens,
+              );
+            }
+          }
+        }
+      }
+      await db.runAsync(
+        "INSERT OR REPLACE INTO app_settings (key, value) VALUES ('records_manifest_v3', 'done')",
       );
     });
   }
@@ -471,6 +575,7 @@ export async function replacePageIndex(
 ): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM pages WHERE documentId = ?', documentId);
+    await db.runAsync('DELETE FROM chip_records WHERE documentId = ?', documentId);
     for (const page of pages) {
       const text = page.text.trim();
       if (!text) continue;
@@ -482,6 +587,40 @@ export async function replacePageIndex(
         normalizeText(text),
       );
     }
+
+    const docRow = await db.getFirstAsync<{ tool: string; moduleName: string; displayName: string }>(
+      'SELECT m.tool, m.name AS moduleName, d.displayName FROM documents d JOIN modules m ON m.id = d.moduleId WHERE d.id = ?',
+      documentId,
+    );
+    if (docRow && pages.length > 0) {
+      const headers = findPageTableHeaders(pages[0].text);
+      for (const page of pages) {
+        const table = parsePageTable(page.text, headers);
+        for (const row of table.rows) {
+          const rec = mapColumnsToRecord(table.columns, row);
+          if (rec.brand || rec.model || rec.partNumber || rec.chip) {
+            const searchTokens = (rec.brand + ' ' + rec.model + ' ' + rec.partNumber + ' ' + rec.chip)
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '');
+            await db.runAsync(
+              `INSERT INTO chip_records (documentId, pageNumber, tool, moduleName, displayName, brand, model, partNumber, chip, searchTokens)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              documentId,
+              page.pageNumber,
+              docRow.tool,
+              docRow.moduleName,
+              docRow.displayName,
+              rec.brand,
+              rec.model,
+              rec.partNumber,
+              rec.chip,
+              searchTokens,
+            );
+          }
+        }
+      }
+    }
+
     await db.runAsync(
       'UPDATE documents SET indexingStatus = ?, indexError = ?, pageCount = CASE WHEN ? > 0 THEN ? ELSE pageCount END WHERE id = ?',
       status,
@@ -559,10 +698,84 @@ export async function searchPages(
     `%${normalizeText(options.query)}%`,
     ...params.slice(-2),
   );
-  return rows.map((row) => ({
-    ...row,
-    snippet: excerptFor(row.text, options.query),
-  }));
+
+  // Build a cache of first-page headers per document so inner pages inherit column names
+  const docHeaderCache = new Map<string, string[]>();
+  return rows.map((row) => {
+    // Get or detect column headers for this document
+    if (!docHeaderCache.has(row.documentId)) {
+      // Find the first-page text for this document from rows to detect headers
+      const firstPageRow = rows.find((r) => r.documentId === row.documentId && r.pageNumber === 1);
+      const headers = firstPageRow ? findPageTableHeaders(firstPageRow.text) : null;
+      docHeaderCache.set(row.documentId, headers ?? []);
+    }
+    const cachedHeaders = docHeaderCache.get(row.documentId) ?? [];
+
+    // Parse the page table using inherited headers when the page itself has no header row
+    const table = parsePageTable(row.text, cachedHeaders.length > 0 ? cachedHeaders : null);
+    const terms = options.query.trim().split(/\s+/).map(normalizeText).filter(Boolean);
+    const matchRows = table.rows.filter((cells) =>
+      terms.length > 0 && cells.some((cell) => terms.some((term) => normalizeText(cell).includes(term))),
+    );
+
+    return {
+      ...row,
+      snippet: excerptFor(row.text, options.query),
+      matchColumns: table.columns,
+      matchRows,
+    };
+  });
+}
+
+export async function searchChipRecords(
+  db: SQLiteDatabase,
+  options: {
+    query: string;
+    tool?: ToolName;
+    moduleId?: string;
+    documentId?: string;
+    limit?: number;
+    offset?: number;
+  },
+): Promise<SearchChipRecord[]> {
+  const rawQuery = options.query.trim();
+  if (!rawQuery) return [];
+  const tokens = rawQuery.match(/[a-z0-9]+/gi)?.map((t) => t.toLowerCase()) ?? [];
+  if (!tokens.length) return [];
+
+  const where: string[] = [];
+  const params: (string | number)[] = [];
+
+  for (const token of tokens) {
+    where.push('searchTokens LIKE ?');
+    params.push(`%${token}%`);
+  }
+
+  if (options.tool) {
+    where.push('tool = ?');
+    params.push(options.tool);
+  }
+  if (options.moduleId) {
+    where.push('documentId IN (SELECT id FROM documents WHERE moduleId = ?)');
+    params.push(options.moduleId);
+  }
+  if (options.documentId) {
+    where.push('documentId = ?');
+    params.push(options.documentId);
+  }
+
+  const limit = options.limit ?? 50;
+  params.push(limit, options.offset ?? 0);
+
+  const sql = `
+    SELECT id, documentId, pageNumber, tool, moduleName, displayName, brand, model, partNumber, chip
+    FROM chip_records
+    WHERE ${where.join(' AND ')}
+    ORDER BY tool, moduleName, pageNumber, brand, partNumber
+    LIMIT ? OFFSET ?
+  `;
+
+  return await db.getAllAsync<SearchChipRecord>(sql, ...params);
 }
 
 export async function getPageText(

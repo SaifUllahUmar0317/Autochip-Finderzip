@@ -2,13 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Pressable,
-  Share,
   Text,
   View,
   StyleSheet,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionButton,
@@ -23,17 +21,14 @@ import {
 } from '@/components/common';
 import { useApp } from '@/context/AppContext';
 import {
-  hasBookmark,
   listTools,
-  listBookmarks,
   listDocuments,
   listModules,
   saveHistory,
-  searchPages,
-  toggleBookmark,
+  searchChipRecords,
   type DocumentRow,
   type ModuleRow,
-  type SearchResult,
+  type SearchChipRecord,
   type ToolName,
 } from '@/lib/database';
 
@@ -60,8 +55,7 @@ export default function SearchScreen() {
   const [tools, setTools] = useState<ToolName[]>([]);
   const [modules, setModules] = useState<ModuleRow[]>([]);
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
+  const [results, setResults] = useState<SearchChipRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -77,12 +71,11 @@ export default function SearchScreen() {
   useEffect(() => {
     if (!db) return;
     let active = true;
-    void Promise.all([listTools(db), listModules(db), listDocuments(db), listBookmarks(db)]).then(([toolRows, moduleRows, docs, bookmarks]) => {
+    void Promise.all([listTools(db), listModules(db), listDocuments(db)]).then(([toolRows, moduleRows, docs]) => {
       if (!active) return;
       setTools(toolRows);
       setModules(moduleRows);
       setDocuments(docs);
-      setSavedKeys(new Set(bookmarks.map((item) => `${item.documentId}:${item.pageNumber}`)));
     });
     return () => {
       active = false;
@@ -95,6 +88,7 @@ export default function SearchScreen() {
     void saveHistory(db, initialQuery, selectedTool === 'all' ? null : selectedTool, selectedModule || null).then(refresh);
   }, [db, initialQuery, selectedTool, selectedModule, refresh]);
 
+  // Fast search with lean 80ms debounce for lightning speed
   useEffect(() => {
     if (!db || !query.trim()) {
       setResults([]);
@@ -106,7 +100,7 @@ export default function SearchScreen() {
     setLoading(true);
     setHasMore(false);
     const timer = setTimeout(() => {
-      void searchPages(db, {
+      void searchChipRecords(db, {
         query,
         tool: selectedTool ?? undefined,
         moduleId: selectedModule || undefined,
@@ -124,7 +118,7 @@ export default function SearchScreen() {
         setLoading(false);
         Alert.alert('Search could not finish', error instanceof Error ? error.message : 'Try again.');
       });
-    }, 180);
+    }, 80);
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -135,11 +129,12 @@ export default function SearchScreen() {
     if (!db || !query.trim()) return;
     void saveHistory(db, query, selectedTool === 'all' ? null : selectedTool, selectedModule || null).then(refresh);
   };
+
   const showMore = async () => {
     if (!db || loadingMore) return;
     setLoadingMore(true);
     try {
-      const rows = await searchPages(db, {
+      const rows = await searchChipRecords(db, {
         query,
         tool: selectedTool ?? undefined,
         moduleId: selectedModule || undefined,
@@ -155,11 +150,13 @@ export default function SearchScreen() {
       setLoadingMore(false);
     }
   };
+
   const changeTool = (value: ToolName | null) => {
     setSelectedTool(value);
     setSelectedModule('');
     setSelectedDocument('');
   };
+
   const visibleModules = modules.filter((item) => selectedTool === null || item.tool === selectedTool);
   const visibleDocuments = documents.filter((item) =>
     (selectedTool === null || item.tool === selectedTool) &&
@@ -167,38 +164,18 @@ export default function SearchScreen() {
   );
   const activeFilterCount = Number(selectedTool !== null) + Number(Boolean(selectedModule)) + Number(Boolean(selectedDocument));
 
-  const onToggleBookmark = async (result: SearchResult) => {
-    if (!db) return;
-    const key = `${result.documentId}:${result.pageNumber}`;
-    await toggleBookmark(db, result);
-    setSavedKeys((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-    refresh();
-  };
-  const copySnippet = async (result: SearchResult) => {
-    await Clipboard.setStringAsync(result.snippet);
-    Alert.alert('Copied', 'The source excerpt was copied to your clipboard.');
-  };
-  const shareResult = (result: SearchResult) => {
-    void Share.share({
-      message: `${result.displayName} · ${result.moduleName} · page ${result.pageNumber}\n\n${result.snippet}`,
-    });
-  };
-
   return (
     <Screen keyboardAvoiding contentStyle={styles.content}>
       <TopBar title="Search manuals" />
+
+      {/* Concise, professional search bar */}
       <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Feather name="search" size={19} color={colors.mutedForeground} />
         <TextField
           value={query}
           onChangeText={setQuery}
-          placeholder="Part number or chip number"
-          accessibilityLabel="Search indexed PDF text"
+          placeholder="Search part or chip..."
+          accessibilityLabel="Search part or chip"
           autoCapitalize="none"
           returnKeyType="search"
           onSubmitEditing={submitSearch}
@@ -211,6 +188,8 @@ export default function SearchScreen() {
           </Pressable>
         ) : null}
       </View>
+
+      {/* Filter Toggle */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={filtersOpen ? 'Hide search filters' : `Show search filters${activeFilterCount ? `, ${activeFilterCount} active` : ''}`}
@@ -231,94 +210,153 @@ export default function SearchScreen() {
         </Text>
         <Feather name={filtersOpen ? 'chevron-up' : 'chevron-down'} size={17} color={colors.mutedForeground} />
       </Pressable>
+
       {filtersOpen ? (
         <View style={styles.filters}>
-      <View style={styles.filterBlock}>
-        <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>PROGRAMMER</Text>
-        <View style={styles.filterRow}>
-          <Pill label="All manuals" selected={selectedTool === null} onPress={() => changeTool(null)} />
-          {tools.map((tool) => (
-            <Pill key={tool} label={tool} selected={selectedTool === tool} onPress={() => changeTool(tool)} />
-          ))}
-        </View>
-      </View>
-      {visibleModules.length ? (
-        <View style={styles.filterBlock}>
-          <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>MODULE</Text>
-          <View style={styles.filterRow}>
-            <Pill label="All modules" selected={!selectedModule} onPress={() => { setSelectedModule(''); setSelectedDocument(''); }} />
-            {visibleModules.map((module) => (
-              <Pill key={module.id} label={module.name} selected={selectedModule === module.id} onPress={() => { setSelectedModule(module.id); setSelectedDocument(''); }} />
-            ))}
+          <View style={styles.filterBlock}>
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>PROGRAMMER</Text>
+            <View style={styles.filterRow}>
+              <Pill label="All manuals" selected={selectedTool === null} onPress={() => changeTool(null)} />
+              {tools.map((tool) => (
+                <Pill key={tool} label={tool} selected={selectedTool === tool} onPress={() => changeTool(tool)} />
+              ))}
+            </View>
           </View>
+          {visibleModules.length ? (
+            <View style={styles.filterBlock}>
+              <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>MODULE</Text>
+              <View style={styles.filterRow}>
+                <Pill label="All modules" selected={!selectedModule} onPress={() => { setSelectedModule(''); setSelectedDocument(''); }} />
+                {visibleModules.map((module) => (
+                  <Pill key={module.id} label={module.name} selected={selectedModule === module.id} onPress={() => { setSelectedModule(module.id); setSelectedDocument(''); }} />
+                ))}
+              </View>
+            </View>
+          ) : null}
+          {visibleDocuments.length ? (
+            <View style={styles.filterBlock}>
+              <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>PDF</Text>
+              <View style={styles.filterRow}>
+                <Pill label="All PDFs" selected={!selectedDocument} onPress={() => setSelectedDocument('')} />
+                {visibleDocuments.map((doc) => (
+                  <Pill key={doc.id} label={doc.displayName} selected={selectedDocument === doc.id} onPress={() => setSelectedDocument(doc.id)} />
+                ))}
+              </View>
+            </View>
+          ) : null}
         </View>
       ) : null}
-      {visibleDocuments.length ? (
-        <View style={styles.filterBlock}>
-          <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>PDF</Text>
-          <View style={styles.filterRow}>
-            <Pill label="All PDFs" selected={!selectedDocument} onPress={() => setSelectedDocument('')} />
-            {visibleDocuments.map((doc) => (
-              <Pill key={doc.id} label={doc.displayName} selected={selectedDocument === doc.id} onPress={() => setSelectedDocument(doc.id)} />
-            ))}
-          </View>
-        </View>
-      ) : null}
-        </View>
-      ) : null}
+
+      {/* Results Header */}
       <View style={styles.resultHeading}>
-        <SectionTitle title={query.trim() ? 'Matching pages' : 'Search the library'} />
-        {loading ? <Text style={[styles.resultCount, { color: colors.mutedForeground }]}>Searching…</Text> : query.trim() ? <Text style={[styles.resultCount, { color: colors.mutedForeground }]}>{results.length}{hasMore ? '+' : ''} found</Text> : null}
+        <SectionTitle title={query.trim() ? 'Matching records' : 'Search the library'} />
+        {loading ? (
+          <Text style={[styles.resultCount, { color: colors.mutedForeground }]}>Searching…</Text>
+        ) : query.trim() ? (
+          <Text style={[styles.resultCount, { color: colors.mutedForeground }]}>
+            {results.length}{hasMore ? '+' : ''} found
+          </Text>
+        ) : null}
       </View>
+
       {!query.trim() ? (
         <Text style={[styles.searchHint, { color: colors.mutedForeground }]}>Search indexed text across your offline library.</Text>
       ) : null}
+
       {query.trim() && !loading && results.length === 0 ? (
         <Surface style={styles.emptyCard}>
           <EmptyState
             icon="search"
-            title="No matching pages"
-            description="Check the spelling, remove a word, or switch back to all manuals. Scanned image-only PDFs need OCR before their contents can be searched."
+            title="No matching records"
+            description="Check the spelling, remove a word, or switch back to all manuals."
           />
         </Surface>
       ) : null}
-      {results.map((result) => (
-        <Surface key={`${result.documentId}-${result.pageNumber}`} style={styles.resultCard}>
+
+      {/* Clean, well-formatted records containing ONLY the 4 fields (Brand, Model, Part Number, Chip Number) */}
+      {results.map((item) => (
+        <Surface key={item.id} style={styles.recordCard}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Open ${result.displayName}, page ${result.pageNumber}`}
-            testID={`result-page-${result.pageNumber}`}
-            onPress={() => router.push({ pathname: '/viewer', params: { documentId: result.documentId, page: result.pageNumber, q: query } })}
+            accessibilityLabel={`Open ${item.displayName}, page ${item.pageNumber}`}
+            testID={`result-record-${item.id}`}
+            onPress={() =>
+              router.push({
+                pathname: '/viewer',
+                params: {
+                  documentId: item.documentId,
+                  page: item.pageNumber,
+                  q: query,
+                },
+              })
+            }
+            style={({ pressed }) => pressed && styles.pressed}
           >
-            <View style={styles.resultTop}>
-              <View style={[styles.pdfIcon, { backgroundColor: colors.secondary }]}>
-                <Feather name="file-text" size={16} color={colors.cyan} />
+            {/* Top Bar: Compact Manual & Page indicator */}
+            <View style={styles.cardHeader}>
+              <View style={[styles.badge, { backgroundColor: colors.secondary }]}>
+                <Feather name="file-text" size={12} color={colors.cyan} />
+                <Text numberOfLines={1} style={[styles.badgeText, { color: colors.foreground }]}>
+                  {item.tool} · {item.moduleName}
+                </Text>
+                <Text style={[styles.badgePage, { color: colors.mutedForeground }]}>
+                  Page {item.pageNumber}
+                </Text>
               </View>
-              <View style={styles.resultTitles}>
-                <Text numberOfLines={1} style={[styles.resultDoc, { color: colors.foreground }]}>{result.displayName}</Text>
-                <Text numberOfLines={1} style={[styles.resultMeta, { color: colors.mutedForeground }]}>{result.tool} · {result.moduleName} · page {result.pageNumber} of {result.pageCount}</Text>
+              <View style={styles.openIndicator}>
+                <Text style={[styles.openText, { color: colors.cyan }]}>Open</Text>
+                <Feather name="arrow-up-right" size={13} color={colors.cyan} />
               </View>
-              <Feather name="arrow-up-right" size={16} color={colors.mutedForeground} />
             </View>
-            <View style={[styles.excerptBox, { backgroundColor: colors.background }]}>
-              <HighlightedText text={result.snippet} query={query} numberOfLines={4} style={[styles.excerpt, { color: colors.secondaryForeground }]} />
+
+            {/* Exactly the 4 Core Fields: Model, Brand, Part Number, Chip Number */}
+            <View style={[styles.fourFieldsContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              {/* Row 1: Brand & Model */}
+              <View style={styles.fieldRow}>
+                <View style={styles.fieldBox}>
+                  <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>BRAND</Text>
+                  <HighlightedText
+                    text={item.brand || '—'}
+                    query={query}
+                    style={[styles.fieldValue, { color: colors.foreground }]}
+                  />
+                </View>
+                <View style={styles.fieldBox}>
+                  <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>MODEL</Text>
+                  <HighlightedText
+                    text={item.model || '—'}
+                    query={query}
+                    style={[styles.fieldValue, { color: colors.foreground }]}
+                  />
+                </View>
+              </View>
+
+              {/* Row 2: Part Number & Chip Number */}
+              <View style={[styles.fieldRow, styles.fieldRowBottom, { borderTopColor: colors.border }]}>
+                <View style={styles.fieldBox}>
+                  <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>PART NUMBER</Text>
+                  <HighlightedText
+                    text={item.partNumber || '—'}
+                    query={query}
+                    style={[styles.fieldValueHighlight, { color: colors.foreground }]}
+                  />
+                </View>
+                <View style={styles.fieldBox}>
+                  <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>CHIP NUMBER</Text>
+                  <HighlightedText
+                    text={item.chip || '—'}
+                    query={query}
+                    style={[styles.fieldValueChip, { color: colors.cyan }]}
+                  />
+                </View>
+              </View>
             </View>
           </Pressable>
-          <View style={styles.resultActions}>
-            <Pressable accessibilityRole="button" accessibilityLabel={savedKeys.has(`${result.documentId}:${result.pageNumber}`) ? 'Remove bookmark' : 'Bookmark result'} onPress={() => void onToggleBookmark(result)} style={styles.actionIcon}>
-              <Feather name="bookmark" size={16} color={savedKeys.has(`${result.documentId}:${result.pageNumber}`) ? colors.primary : colors.mutedForeground} />
-            </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Copy source excerpt" onPress={() => void copySnippet(result)} style={styles.actionIcon}>
-              <Feather name="copy" size={16} color={colors.mutedForeground} />
-            </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Share search result" onPress={() => shareResult(result)} style={styles.actionIcon}>
-              <Feather name="share-2" size={16} color={colors.mutedForeground} />
-            </Pressable>
-          </View>
         </Surface>
       ))}
+
       {hasMore ? (
-        <ActionButton label="Load more matching pages" icon="arrow-down" variant="secondary" loading={loadingMore} onPress={() => void showMore()} />
+        <ActionButton label="Load more matching records" icon="arrow-down" variant="secondary" loading={loadingMore} onPress={() => void showMore()} />
       ) : null}
     </Screen>
   );
@@ -329,7 +367,7 @@ function first(value: string | string[] | undefined): string {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 12 },
+  content: { gap: 11 },
   searchBox: { minHeight: 52, borderRadius: 10, borderWidth: 1, paddingLeft: 14, paddingRight: 8, flexDirection: 'row', alignItems: 'center', gap: 10 },
   queryInput: { flex: 1, borderWidth: 0, backgroundColor: 'transparent', minHeight: 48, paddingHorizontal: 0 },
   clearButton: { width: 38, height: 42, alignItems: 'center', justifyContent: 'center' },
@@ -344,15 +382,63 @@ const styles = StyleSheet.create({
   resultCount: { fontSize: 11, fontWeight: '600' },
   searchHint: { fontSize: 13 },
   emptyCard: { padding: 2 },
-  resultCard: { gap: 10, padding: 12, borderRadius: 10 },
-  resultTop: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  pdfIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  resultTitles: { flex: 1 },
-  resultDoc: { fontSize: 12, fontWeight: '700' },
-  resultMeta: { fontSize: 12, marginTop: 3 },
-  excerptBox: { borderRadius: 8, padding: 10, gap: 6 },
-  excerpt: { fontSize: 13, lineHeight: 19 },
-  resultActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+
+  /* Record card */
+  recordCard: { padding: 12, borderRadius: 10, gap: 8 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    flex: 1,
+  },
+  badgeText: { fontSize: 12, fontWeight: '700' },
+  badgePage: { fontSize: 11, fontWeight: '500' },
+  openIndicator: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  openText: { fontSize: 12, fontWeight: '600' },
+
+  /* 4-Field clean grid: Model, Brand, Part Number, Chip Number */
+  fourFieldsContainer: {
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  fieldRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    gap: 12,
+  },
+  fieldRowBottom: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  fieldBox: {
+    flex: 1,
+    gap: 2,
+  },
+  fieldLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  fieldValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  fieldValueHighlight: {
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  fieldValueChip: {
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
   pressed: { opacity: 0.72 },
 });

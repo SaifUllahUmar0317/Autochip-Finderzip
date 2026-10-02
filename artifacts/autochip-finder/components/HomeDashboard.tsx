@@ -64,8 +64,8 @@ export default function HomeDashboard() {
         <TextField
           value={query}
           onChangeText={setQuery}
-          placeholder="Search part number or chip number"
-          accessibilityLabel="Search part number or chip number"
+          placeholder="Search part or chip..."
+          accessibilityLabel="Search part or chip"
           autoCapitalize="none"
           returnKeyType="search"
           onSubmitEditing={() => openSearch()}
