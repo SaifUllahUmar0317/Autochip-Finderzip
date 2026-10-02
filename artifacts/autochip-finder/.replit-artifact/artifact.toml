@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "AutoChip Finder"
+description = "An offline-first automotive chip and module reference app for technicians using CG100X and iProg Pro, with searchable PDF manuals, local bookmarks, and an expanding personal library."
+version = "1.0.0"
+id = "artifacts/autochip-finder"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 19642
+
+[services.development]
+run = "pnpm --filter @workspace/autochip-finder run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/autochip-finder", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/autochip-finder", "run", "serve" ]
+
+[services.env]
+PORT = "19642"
+BASE_PATH = "/"

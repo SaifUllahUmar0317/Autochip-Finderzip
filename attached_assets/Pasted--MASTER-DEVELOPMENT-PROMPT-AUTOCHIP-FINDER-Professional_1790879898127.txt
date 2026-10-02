@@ -1,0 +1,804 @@
+# MASTER DEVELOPMENT PROMPT: AUTOCHIP FINDER
+
+## Professional Android PDF Search & Automotive Chip Database Application
+
+**Act as a senior Android developer, UI/UX designer, software architect, and mobile application performance engineer.**
+
+Build a complete, production-quality Android application named **AutoChip Finder**. This application is designed for automotive technicians and electronics professionals who use **CG100X and iProg Pro** tools and need to search large PDF databases quickly by part number, chip number, and other relevant information.
+
+The application must have a modern, premium, visually attractive interface with smooth animations, excellent performance, a simple user experience, and a fully dynamic PDF management system.
+
+**Important:** Do not create just a static UI prototype. Build a fully functional application with real PDF import, indexing, searching, PDF viewing, persistent storage, and working navigation.
+
+---
+
+# 1. Application Identity & Design
+
+**Application name:** AutoChip Finder
+
+**Tagline:** Smart Automotive Chip & Module Search
+
+**Design direction:**
+
+* Premium automotive diagnostic technology aesthetic.
+* Modern, minimal, professional interface.
+* Elegant dark and light themes.
+* Deep navy, electric blue, cyan, and subtle violet as the primary design palette.
+* Soft gradients, subtle shadows, clean cards, and rounded corners.
+* Carefully designed icons representing automotive electronics, microchips, documents, and search.
+* Beautiful splash screen with an animated chip or circuit-board visual and the AutoChip Finder logo.
+* Smooth page transitions and responsive touch interactions.
+* Use animations purposefully, avoiding anything that makes the app feel slow or complicated.
+
+The interface should look like a professionally designed commercial Android application, not a generic AI-generated dashboard.
+
+# 2. Splash Screen and Application Launch
+
+When the user opens the application:
+
+1. Display a full-screen branded splash screen.
+2. Show the AutoChip Finder logo, featuring an elegant microchip combined with an automotive electronics motif.
+3. Animate the logo using a smooth scale-and-fade effect.
+4. Reveal the application name with a subtle text animation.
+5. Display the tagline: "Smart Automotive Chip & Module Search".
+6. Transition smoothly into the main dashboard.
+
+Keep the splash screen short and elegant. Do not delay application startup with unnecessary animations.
+
+# 3. Main Dashboard
+
+Create a visually impressive home screen with a welcoming header.
+
+**Header:**
+
+* AutoChip Finder logo and name.
+* A short greeting such as "Find your automotive chip data".
+* A theme toggle for switching between dark and light modes.
+* A settings icon.
+
+**Main section:**
+
+Display two large, premium interactive cards side by side on larger screens or vertically on smaller phones.
+
+### Card 1: CG100X
+
+* Large CG100X title.
+* Professional automotive diagnostic illustration or chip icon.
+* Subtitle: "Explore CG100X databases".
+* Display the number of available PDF modules.
+* Attractive blue/cyan gradient accents.
+* Smooth press animation.
+* Clicking the card opens the CG100X dashboard.
+
+### Card 2: iProg Pro
+
+* Large iProg Pro title.
+* Professional microchip or automotive programming illustration.
+* Subtitle: "Explore iProg Pro databases".
+* Display the number of available PDF modules.
+* A distinct but matching gradient accent.
+* Smooth press animation.
+* Clicking the card opens the iProg Pro dashboard.
+
+**Additional home screen elements:**
+
+* A prominent global search bar.
+* Recently searched items.
+* Recently opened PDFs.
+* A quick-access button to add a new PDF.
+* A compact statistics section showing total PDFs, total indexed pages, and available modules.
+
+All statistics must be based on actual application data, not hardcoded sample numbers.
+
+# 4. CG100X and iProg Pro Dashboards
+
+When a user taps CG100X or iProg Pro, open a dedicated dashboard for the selected tool.
+
+Each dashboard must dynamically display the PDF modules belonging to that tool.
+
+**Examples of possible modules:**
+
+* Dashboard
+* Airbag
+* ECU
+* BCM
+* Mileage
+* Immobilizer
+* Steering
+* Other modules
+
+These are examples, not a fixed list. Automatically display the actual imported PDFs and their assigned categories.
+
+**Module card design:**
+
+* A suitable icon for each module.
+* Module name.
+* Number of imported PDFs or records.
+* A small description, if available.
+* A visually clear search or open action.
+* Smooth card entrance animations.
+* A context menu to rename, edit, or delete a module.
+
+If a module has no PDFs, display an attractive empty state with an option to add a PDF.
+
+Allow users to create, rename, reorder, and delete modules through the graphical interface.
+
+A user should never need to edit source code to add a new module.
+
+# 5. PDF and Module Management
+
+Create a dedicated **PDF Library** and management system.
+
+The user must be able to:
+
+* Import PDF files from Android's file picker.
+* Select the target tool: CG100X or iProg Pro.
+* Assign the PDF to an existing module.
+* Create a new module while importing.
+* Enter or edit the display name of a PDF.
+* View file size, page count, import date, and indexing status.
+* Rebuild a PDF's search index when needed.
+* Replace an existing PDF.
+* Remove unwanted PDFs.
+* View indexing progress.
+* Retry failed indexing operations.
+
+**Import workflow:**
+
+1. Tap "Add PDF".
+2. Select CG100X or iProg Pro.
+3. Select an existing module or create a new one.
+4. Choose the PDF file using the native Android file picker.
+5. Preview the filename and basic document information.
+6. Confirm the import.
+7. Extract and index the document text in the background.
+8. Display a progress indicator.
+9. Notify the user when the PDF is ready for searching.
+
+Use Android's Storage Access Framework or another reliable Android-compatible document selection mechanism.
+
+Store imported documents in app-managed storage or use persistent URI permissions where appropriate. Do not assume that original external file paths will remain accessible forever.
+
+**Important:** Imported PDFs must be searchable even when the application is completely offline.
+
+# 6. Search Selection Screen
+
+When a user opens a module, display a dedicated search selection page.
+
+For example, opening the CG100X Airbag module should display:
+
+**CG100X → Airbag**
+
+Two large search options:
+
+### Search by Part Number
+
+* Large search icon.
+* Title: "Part Number".
+* Subtitle: "Find records using a part number".
+
+### Search by Chip Number
+
+* Large microchip icon.
+* Title: "Chip Number".
+* Subtitle: "Find records using a chip number".
+
+Tapping either option should open the appropriate search interface.
+
+Also provide a third option:
+
+**Search Entire PDF**
+
+This allows users to search any text within the selected document, including manufacturer names, module names, and other relevant terms.
+
+Keep the screen simple and avoid unnecessary menus.
+
+# 7. Advanced Search Engine
+
+This is the most important part of the application.
+
+Develop a fast and reliable local PDF search engine.
+
+### A. Part Number Search
+
+Allow users to enter part numbers such as:
+
+* 13503645
+* 77960-TF0-H420-M3
+* 9012526
+
+Search the indexed content of the PDFs assigned to the selected module.
+
+Support:
+
+* Exact matching.
+* Case-insensitive matching.
+* Partial matching.
+* Flexible handling of hyphens and spaces.
+* Fast results while typing.
+* Search history.
+* Clear search button.
+
+Do not automatically remove meaningful characters from the displayed results. Normalization should be used for matching while preserving the original text.
+
+### B. Chip Number Search
+
+Allow searches such as:
+
+* 95080
+* 95160
+* SPC560P50L3
+* R7F701A033
+* 93C86
+
+Search for the requested chip number across the relevant indexed documents.
+
+The search engine must handle both numeric and alphanumeric chip identifiers.
+
+### C. Search Results
+
+Display the results in modern, readable cards.
+
+Each result should include, when available:
+
+* Part number.
+* Chip number.
+* Brand or manufacturer.
+* Vehicle or module information.
+* Matching text snippet.
+* PDF filename.
+* Page number.
+* Search match type.
+
+The displayed fields must be extracted from the actual PDF content. Do not fabricate missing information.
+
+**Result interactions:**
+
+* Tap a result to open the corresponding PDF at the matching page.
+* Highlight the matching term in the PDF viewer wherever technically possible.
+* Allow the user to copy part numbers and chip numbers.
+* Provide a share action for copying or sharing useful result details.
+* Allow users to bookmark important results.
+
+If the PDF has no structured records or its text cannot be reliably parsed into fields, show the matching text and page reference instead of forcing an incorrect table structure.
+
+### D. Search Performance
+
+Optimize the search engine for large PDF collections.
+
+Requirements:
+
+* Extract PDF text once during import.
+* Store extracted text and searchable metadata in a local database.
+* Use SQLite with appropriate indexes or a suitable local full-text search mechanism.
+* Perform searches without reopening and parsing every PDF from scratch.
+* Use background processing for large document imports.
+* Implement debouncing for live search.
+* Paginate large result sets.
+* Keep the interface responsive while indexing or searching.
+* Handle documents containing thousands of records.
+
+The search engine should support searches across all imported PDFs in a selected module and optionally across all modules of the selected tool.
+
+# 8. Integrated PDF Viewer
+
+Build a clean, reliable PDF viewing experience.
+
+Features:
+
+* Smooth page navigation.
+* Zoom in and zoom out.
+* Pinch-to-zoom support.
+* Page number indicator.
+* Search term highlighting where possible.
+* Jump directly to a matching page.
+* A document outline or thumbnail navigation if supported.
+* Light and dark viewing controls.
+* A clear back button to return to the search results.
+
+Opening a search result must take the user to the correct document and page, rather than simply opening the PDF at the beginning.
+
+Use an appropriate Android PDF rendering library or a reliable native viewing solution. Keep PDF viewing separate from search indexing.
+
+# 9. Dynamic Database and Extensibility
+
+Build the application around a flexible data model.
+
+Do not hardcode module names or PDF lists into the user interface.
+
+Use a data structure that supports:
+
+* Multiple tools.
+* Unlimited user-created modules, subject to device storage.
+* Multiple PDFs per module.
+* Metadata associated with each document.
+* Search indexes.
+* Bookmarks.
+* Recent searches.
+* Import and indexing status.
+
+Suggested entities:
+
+**Tool**
+
+* id
+* name
+* icon
+* createdAt
+
+**Module**
+
+* id
+* toolId
+* name
+* description
+* createdAt
+
+**Document**
+
+* id
+* moduleId
+* displayName
+* originalFilename
+* storageReference
+* pageCount
+* fileSize
+* importDate
+* indexingStatus
+
+**SearchRecord**
+
+* id
+* documentId
+* pageNumber
+* extractedText
+* partNumber
+* chipNumber
+* brand
+* additionalMetadata
+
+**Bookmark**
+
+* id
+* documentId
+* pageNumber
+* title
+* createdAt
+
+Use appropriate relationships and indexes.
+
+Do not make the system dependent on a fixed list of predefined modules. The user must be able to expand the database entirely through the app's interface.
+
+# 10. Dark and Light Themes
+
+Implement complete dark and light themes.
+
+**Light theme:**
+
+* Clean white and soft-gray surfaces.
+* Navy or dark-blue text.
+* Professional blue accents.
+* Subtle shadows.
+* Excellent readability.
+
+**Dark theme:**
+
+* Deep navy or charcoal backgrounds.
+* Slightly lighter cards.
+* Bright but controlled cyan or blue accents.
+* Comfortable contrast.
+* No excessive neon effects.
+
+Requirements:
+
+* Theme switch available from the home screen and settings.
+* Apply the selected theme consistently to every screen.
+* Persist the user's theme preference.
+* Support system-default theme as an additional option.
+* Smooth transitions between themes.
+
+# 11. Animation and Interaction Design
+
+Create a polished animation system throughout the application.
+
+Use:
+
+* Smooth splash-screen logo animation.
+* Fade and slide transitions between screens.
+* Subtle card entrance animations.
+* Gentle scale effects when buttons are pressed.
+* Animated search-field focus states.
+* Smooth loading indicators.
+* Progress animations for PDF imports.
+* Elegant empty-state animations.
+* Small success and error feedback animations.
+* Smooth bottom navigation transitions, if bottom navigation is used.
+
+Animations must be lightweight, consistent, and optimized for real Android devices.
+
+Avoid:
+
+* Excessive bouncing.
+* Long transitions.
+* Unnecessary animated backgrounds.
+* Constant movement that distracts from searching.
+* Animations that block user interaction.
+
+# 12. Navigation and Application Structure
+
+Use a simple navigation architecture.
+
+Recommended screens:
+
+1. Splash Screen
+2. Home Dashboard
+3. CG100X Dashboard
+4. iProg Pro Dashboard
+5. Module Details
+6. Search Selection
+7. Search Interface
+8. Search Results
+9. PDF Viewer
+10. PDF Library
+11. Add PDF
+12. Module Management
+13. Bookmarks
+14. Search History
+15. Settings
+
+Provide consistent back navigation.
+
+Maintain the search query and result state when the user returns from the PDF viewer.
+
+Use bottom navigation only if it improves usability. Do not overload the application with too many navigation options.
+
+# 13. Settings and Personalization
+
+Create a professional settings screen containing:
+
+* Theme selection.
+* Default search behavior.
+* Search history management.
+* PDF library management.
+* Database storage information.
+* Reindex all PDFs option.
+* Clear cached data option.
+* Application information.
+* Version number.
+* Privacy information.
+
+Include confirmation dialogs for destructive operations.
+
+Never delete an imported PDF without clear user confirmation.
+
+# 14. Error Handling and Reliability
+
+Handle real-world document problems gracefully.
+
+The application must handle:
+
+* Corrupted PDFs.
+* Password-protected PDFs.
+* Image-only scanned PDFs.
+* Empty documents.
+* Documents with unusual page sizes.
+* Large PDFs.
+* Duplicate imports.
+* Interrupted indexing.
+* Insufficient storage.
+* Missing document permissions.
+* Failed PDF rendering.
+
+For scanned PDFs, optionally provide OCR as an additional feature. Clearly distinguish OCR-supported documents from documents whose text was extracted directly.
+
+Do not silently report a document as fully indexed if text extraction failed.
+
+Display clear and helpful messages instead of technical crash screens.
+
+# 15. Technical Architecture
+
+Use a reliable Android technology stack.
+
+**Preferred approach:**
+
+* Kotlin.
+* Jetpack Compose for the user interface.
+* Material 3 with a carefully customized visual design.
+* Navigation Compose.
+* Room database backed by SQLite.
+* Android WorkManager for reliable background indexing.
+* Coroutines and Flow for asynchronous operations.
+* Android Storage Access Framework for PDF imports.
+* A suitable PDF text extraction library.
+* A reliable Android PDF rendering library.
+
+Choose libraries that are compatible with the selected Android SDK and maintainable for future updates.
+
+Keep the architecture modular and separate:
+
+* UI components.
+* Navigation.
+* Database.
+* PDF import.
+* Text extraction.
+* Search indexing.
+* Search engine.
+* PDF viewing.
+* Theme management.
+
+Use MVVM or a similarly maintainable architecture.
+
+The application should be local-first, requiring no account, backend server, or internet connection for its main features.
+
+# 16. Initial PDF Setup
+
+Use the PDFs supplied with this project as the initial example dataset.
+
+Currently supplied documents include:
+
+* **CG100X Support Airbag List** — Air_bag.pdf
+* **CG100X Support BCM List** — BCM.pdf
+
+Import these into the CG100X tool and assign them to the appropriate Airbag and BCM modules.
+
+Use the actual contents of these documents to validate the initial search implementation.
+
+For example:
+
+* Search for part number `13503645` in the Airbag database.
+* Search for chip number `95080` in the Airbag database.
+* Search for a known BCM module or chip entry in the BCM database.
+
+Verify that the results point to the correct source PDF and page.
+
+Do not create fake sample records and present them as extracted PDF data.
+
+The application must also be ready for additional Dashboard, ECU, and other PDFs that the user imports later.
+
+The iProg Pro dashboard should be fully functional even if its database is initially empty.
+
+# 17. Performance and Storage Optimization
+
+Optimize the application for mid-range Android phones.
+
+Requirements:
+
+* Fast cold startup.
+* Low memory consumption.
+* Responsive scrolling.
+* Efficient PDF rendering.
+* Background indexing.
+* Incremental database updates.
+* Avoid repeatedly extracting unchanged PDFs.
+* Support large search result collections.
+* Display indexing progress.
+* Recover gracefully after application restarts.
+* Avoid keeping every PDF page rendered in memory.
+
+Keep the core search functionality usable on devices with limited resources.
+
+# 18. Android Packaging and Installation
+
+Prepare a complete Android Studio project.
+
+Requirements:
+
+* Generate a debug APK for testing.
+* Ensure the project builds successfully.
+* Provide a release build configuration.
+* Include the necessary Android permissions only.
+* Configure an appropriate application icon.
+* Set a suitable minimum Android version after considering the selected libraries.
+* Ensure the app installs and runs on a physical Android device.
+* Include clear instructions for building the APK.
+
+The final result should be an installable Android application, not merely a browser-based mockup or a design prototype.
+
+# 19. Testing and Acceptance Criteria
+
+Before considering the project complete, verify all of the following:
+
+**Core functionality**
+
+* The application launches successfully.
+* Both CG100X and iProg Pro dashboards open correctly.
+* Imported PDFs appear in the correct modules.
+* New modules can be created through the GUI.
+* New PDFs can be imported without changing the source code.
+* Part number search returns correct matching records.
+* Chip number search returns correct matching records.
+* Search results identify the correct PDF and page.
+* Tapping a result opens the correct PDF page.
+* Search history and bookmarks persist after restarting the app.
+
+**User interface**
+
+* Dark and light themes work across every screen.
+* The interface adapts to different phone screen sizes.
+* Buttons and navigation behave consistently.
+* Animations remain smooth during normal usage.
+* Empty states and error messages are clear.
+* The application is easy to use without technical knowledge.
+
+**Performance and reliability**
+
+* Searches do not repeatedly extract entire PDFs.
+* Indexing runs without freezing the interface.
+* Large documents do not cause application crashes under normal device resource limits.
+* The application handles interrupted imports and indexing.
+* The database remains consistent after app restarts.
+* The app works offline after PDFs are imported.
+
+Provide a concise test report identifying completed tests, any remaining limitations, and any known issues.
+
+# 20. Development Instructions
+
+Follow this implementation order:
+
+**Phase 1 — Project foundation**
+
+* Set up the Android project.
+* Implement the theme system and navigation.
+* Build the splash screen and main dashboard.
+* Create the CG100X and iProg Pro dashboards.
+
+**Phase 2 — Dynamic PDF management**
+
+* Implement module creation and editing.
+* Build the PDF import workflow.
+* Store PDF metadata in the local database.
+* Add indexing status and progress indicators.
+
+**Phase 3 — Search engine**
+
+* Implement PDF text extraction.
+* Build the local search index.
+* Implement part number, chip number, and full-text search.
+* Add structured results and source-page references.
+
+**Phase 4 — PDF viewer**
+
+* Integrate the PDF rendering engine.
+* Implement direct page navigation.
+* Connect search results to the viewer.
+* Add zoom and highlighting where supported.
+
+**Phase 5 — Polish and optimization**
+
+* Add refined animations.
+* Complete dark and light themes.
+* Implement bookmarks, history, and settings.
+* Optimize performance and storage.
+* Test on actual Android devices.
+
+**Phase 6 — Final delivery**
+
+* Resolve build errors.
+* Verify the acceptance criteria.
+* Generate the APK.
+* Provide the complete source project and installation instructions.
+
+Do not sacrifice working functionality for visual effects. If a feature is technically challenging, implement a reliable version first and improve it afterward.
+
+**Final objective:**
+
+Deliver **AutoChip Finder**, a beautiful, fast, offline-capable, extensible Android application that allows automotive electronics technicians to find part numbers and chip numbers in their CG100X and iProg Pro PDF databases within seconds.
+
+The finished app should feel like a premium automotive diagnostic tool: visually polished, easy to understand, smooth to operate, and flexible enough to grow as the user adds more PDFs and modules.
+
+
+## Additional Feature: Global Smart Search (Unified Search Across All PDFs)
+
+Integrate a powerful **Global Smart Search** feature into the AutoChip Finder Android application. This feature should work alongside the existing CG100X and iProg Pro sections without replacing or disrupting their individual search functionality.
+
+### 1. Global Search on the Home Screen
+
+* Add a prominent, modern search bar on the home screen, preferably below the app title and above the CG100X and iProg Pro buttons.
+* Use a clean search icon, rounded corners, subtle animations, and a professional design.
+* Allow users to search for a part number, chip number, module name, brand, or other relevant text.
+* Include a clear button and a search history option.
+* Search across all imported and indexed PDFs from both CG100X and iProg Pro.
+
+### 2. Smart Search Results
+
+When a user enters a search query, display matching results from all available PDF files in a well-organized layout.
+
+Each result should show:
+
+* **Tool:** CG100X or iProg Pro.
+* **Module:** For example, Airbag, BCM, ECU, Dashboard, or another configured category.
+* **PDF file name:** The original document where the match was found.
+* **Matched part number or chip number:** Highlight the matching text.
+* **Brand or vehicle information:** If available in the source PDF.
+* **Page number:** The exact page containing the match.
+* **Short context or preview:** A small excerpt around the matched text.
+
+Make each result clickable. When tapped, open the corresponding PDF at the exact page containing the match and highlight the matching text where technically possible.
+
+### 3. Advanced Search Filters
+
+Add optional filters to help users narrow down their results:
+
+* **Tool:** All, CG100X, or iProg Pro.
+* **Module:** All modules or a specific module.
+* **Search type:** Part number, chip number, brand, module, or all text.
+* **PDF file:** Search within a particular imported document.
+
+Filters should be easy to use and should not make the interface complicated.
+
+### 4. Intelligent Matching
+
+Implement a practical search engine that supports:
+
+* Exact matching for part numbers and chip numbers.
+* Partial matching when a user enters only part of a number.
+* Case-insensitive text search.
+* Handling of common spaces, hyphens, and formatting differences in part numbers.
+* Suggestions for similar matches when no exact result is found.
+* Fast results while the user types, with a small debounce to avoid unnecessary processing.
+
+Do not alter the original part numbers or chip numbers displayed from the PDF. Any normalized value should be used only internally for matching.
+
+### 5. Search History and Favorites
+
+* Save recent search queries locally.
+* Allow users to clear individual search history entries or the entire history.
+* Allow users to bookmark important search results.
+* Provide a dedicated favorites section for quickly accessing saved results.
+* Keep all history and favorites stored locally on the device.
+
+### 6. Search Index and Performance
+
+* Build a searchable local index when PDFs are imported or updated.
+* Extract text and relevant information from PDFs without repeatedly processing the entire document for every search.
+* Keep the index synchronized when PDFs are added, replaced, renamed, or deleted.
+* Support large PDF files and avoid blocking the main UI thread.
+* Display a clear indexing progress indicator when processing a new document.
+* If a PDF contains scanned images rather than selectable text, clearly indicate that text extraction may require OCR. Do not silently claim that such a document has been fully indexed if it has not.
+* Make the search engine work offline without requiring an internet connection.
+
+### 7. Search Experience and UI
+
+* Create a dedicated global search results screen with a clean, modern layout.
+* Group results by tool or module when appropriate.
+* Provide loading, empty, no-results, and error states.
+* Use subtle animations when results appear and when filters are changed.
+* Make matching numbers visually prominent and easy to copy.
+* Ensure the screen works smoothly on different Android screen sizes.
+* Support both light and dark themes.
+
+### 8. Technical Integration
+
+* Integrate global search with the existing PDF import system, module management, local database, and PDF viewer.
+* Reuse the same indexing and search logic for the individual CG100X and iProg Pro sections wherever possible.
+* Store each indexed record with its source PDF, tool, module, page number, extracted text, and relevant metadata.
+* Use a scalable architecture so that future tools, modules, and PDF collections can be included without redesigning the search system.
+* Keep the application local-first and avoid unnecessary external APIs or cloud services.
+
+### 9. Important Behavior
+
+* Global search must include only PDFs that have actually been imported and indexed.
+* Never generate fake part numbers, chip numbers, brands, or search results.
+* If the same number appears in multiple PDFs, show all relevant matches with their respective source documents and page numbers.
+* If a search returns no results, suggest checking the spelling or trying a shorter query.
+* Make it possible to open the original PDF directly from every search result.
+
+### 10. Acceptance Tests
+
+Before considering the feature complete, verify that:
+
+* A part number found in a CG100X PDF can be located through global search.
+* A chip number found in an iProg Pro PDF can be located through global search.
+* A query can return results from both tools at the same time.
+* Filters correctly restrict results by tool, module, and PDF.
+* Tapping a result opens the correct document and page.
+* Search still works after closing and reopening the application.
+* Adding a new PDF makes its indexed content available to global search.
+* Replacing or deleting a PDF does not leave stale search results.
+* The feature remains responsive with a large collection of imported PDFs.
+
+**Implementation instruction:** Integrate this feature into the main application architecture described in the first prompt. Do not build it as a separate app or a disconnected demo. First inspect the existing project structure and implement the feature in a way that preserves the original requirements, design, and functionality.
+
+
+
+Some pdf are given but some of the others are also exist.

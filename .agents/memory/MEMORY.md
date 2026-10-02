@@ -1,0 +1,1 @@
+- [Expo SQLite browser preview](expo-sqlite-preview.md) — the proxied Replit browser preview cannot initialize Expo SQLite's web worker; verify this SQLite app in native Expo Go.
