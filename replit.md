@@ -1,21 +1,26 @@
-# [Project name]
+# AutoChip Finder
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An offline-first automotive chip and module reference app for technicians using CG100X and iProg Pro.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm install --frozen-lockfile` — install the imported workspace dependencies.
+- Start the existing `artifacts/autochip-finder: expo` workflow to run the mobile app. Its configured command is `pnpm --filter @workspace/autochip-finder run dev`; Replit supplies its port and preview domains.
+- Start `artifacts/api-server: API Server` for the API. Its command is `pnpm --filter @workspace/api-server run dev`; it listens on the injected `PORT`.
+- Open **Preview on your phone** in Replit and scan the QR code with Expo Go to use the offline library on Android.
+- `pnpm --filter @workspace/autochip-finder run typecheck` — check the mobile app.
+- From `artifacts/autochip-finder`, run `CI=1 pnpm exec expo install --check` and `pnpm dlx expo-doctor@latest` to check Expo compatibility.
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- No user-provided secrets or external services are required for the current mobile app or API health endpoint. The mobile library uses local SQLite. The unused PostgreSQL package needs `DATABASE_URL` only if it is later connected to the API.
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
+- Mobile DB: on-device SQLite through expo-sqlite; an unused PostgreSQL + Drizzle workspace package is also present
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
@@ -38,7 +43,9 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The browser preview intentionally shows “Open the mobile preview”: its offline SQLite worker cannot initialize behind the Replit preview proxy. Use native Expo Go for library features; the browser notice is not a native database failure.
+- React Native's optional desktop DevTools executable cannot launch in this Linux environment because a shared library is missing. Metro still starts and serves the app; this does not block Expo Go.
+- The imported Canvas sandbox has React type conflicts in its calendar and spinner components. Mobile and API type checks pass independently, but the root type-check command includes Canvas and currently fails there.
 
 ## Pointers
 

@@ -1,1 +1,2 @@
 - [Expo SQLite browser preview](expo-sqlite-preview.md) — the proxied Replit browser preview cannot initialize Expo SQLite's web worker; verify this SQLite app in native Expo Go.
+- [Expo config compatibility](expo-config-compatibility.md) — SDK 57 rejects the legacy splash field; Metro startup alone does not validate native build configuration.
