@@ -32,6 +32,11 @@ jobs:
         working-directory: artifacts/autochip-finder
         run: npm install --ignore-scripts
 
+      - name: Link node_modules and package.json to android folder
+        run: |
+          ln -sf ../node_modules artifacts/autochip-finder/android/node_modules
+          ln -sf ../package.json artifacts/autochip-finder/android/package.json
+
       - name: Make Gradlew Executable
         working-directory: artifacts/autochip-finder/android
         run: chmod +x gradlew
