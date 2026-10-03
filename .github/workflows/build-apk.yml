@@ -34,8 +34,13 @@ jobs:
 
       - name: Link node_modules and package.json to android folder
         run: |
-          ln -sf ../node_modules artifacts/autochip-finder/android/node_modules
-          ln -sf ../package.json artifacts/autochip-finder/android/package.json
+          rm -rf artifacts/autochip-finder/android/node_modules
+          rm -f artifacts/autochip-finder/android/package.json
+          ln -s "${{ github.workspace }}/artifacts/autochip-finder/node_modules" artifacts/autochip-finder/android/node_modules
+          ln -s "${{ github.workspace }}/artifacts/autochip-finder/package.json" artifacts/autochip-finder/android/package.json
+          cd artifacts/autochip-finder/android
+          node --print "require.resolve('expo/package.json')"
+          node --print "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })"
 
       - name: Make Gradlew Executable
         working-directory: artifacts/autochip-finder/android
@@ -45,7 +50,7 @@ jobs:
         working-directory: artifacts/autochip-finder/android
         env:
           NODE_PATH: ${{ github.workspace }}/artifacts/autochip-finder/node_modules
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --info --stacktrace
 
       - name: Rename and Prepare APK for Distribution
         run: |
