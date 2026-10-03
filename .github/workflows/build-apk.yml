@@ -32,9 +32,15 @@ jobs:
         working-directory: artifacts/autochip-finder
         run: npm install
 
+      - name: Verify Expo Installation
+        working-directory: artifacts/autochip-finder
+        run: |
+          node -e "console.log('expo version:', require('./node_modules/expo/package.json').version)"
+          node -e "console.log('node path:', require.resolve('expo/package.json'))"
+
       - name: Run Expo Prebuild (Generate Native Android Project)
         working-directory: artifacts/autochip-finder
-        run: npx expo prebuild --platform android --clean --no-install
+        run: ./node_modules/.bin/expo prebuild --platform android --clean --no-install
 
       - name: Make Gradlew Executable
         working-directory: artifacts/autochip-finder/android
@@ -42,6 +48,8 @@ jobs:
 
       - name: Build Release APK
         working-directory: artifacts/autochip-finder/android
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Rename APK for Distribution
@@ -82,7 +90,7 @@ jobs:
             3. Open the downloaded APK file and tap **Install**.
 
             #### ✨ Features
-            - 100 % offline chip lookup — no internet required after install
+            - 100% offline chip lookup — no internet required after install
             - Instant indexed search by Part Number or Chip Number
             - Animated splash screen with custom logo
           files: dist-apk/AutoChipFinder-v1.0.0.apk
