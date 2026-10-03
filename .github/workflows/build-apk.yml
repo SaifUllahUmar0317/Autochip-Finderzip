@@ -29,16 +29,15 @@ jobs:
           distribution: 'temurin'
 
       - name: Install App Dependencies
-        working-directory: artifacts/autochip-finder
-        run: npm install
+        # Use --prefix to install strictly inside the app folder, ignoring monorepo root package.json
+        run: npm install --prefix artifacts/autochip-finder
 
-      - name: Verify Expo Installation
-        working-directory: artifacts/autochip-finder
+      - name: Verify expo is installed
         run: |
-          node -e "console.log('expo version:', require('./node_modules/expo/package.json').version)"
-          node -e "console.log('node path:', require.resolve('expo/package.json'))"
+          ls artifacts/autochip-finder/node_modules/.bin/expo
+          artifacts/autochip-finder/node_modules/.bin/expo --version
 
-      - name: Run Expo Prebuild (Generate Native Android Project)
+      - name: Run Expo Prebuild
         working-directory: artifacts/autochip-finder
         run: ./node_modules/.bin/expo prebuild --platform android --clean --no-install
 
@@ -52,7 +51,7 @@ jobs:
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Rename APK for Distribution
+      - name: Copy APK for Distribution
         run: |
           mkdir -p dist-apk
           cp artifacts/autochip-finder/android/app/build/outputs/apk/release/*.apk dist-apk/AutoChipFinder-v1.0.0.apk
@@ -72,7 +71,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish GitHub Release with APK Download
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
@@ -82,15 +81,15 @@ jobs:
           body: |
             ### 🚗 AutoChip Finder — Standalone Android APK
 
-            Install and run on **any Android device** — no Expo Go or Play Store needed.
+            Install on **any Android device** — no Expo Go or Play Store needed.
 
             #### 📥 How to Install
-            1. Download `AutoChipFinder-v1.0.0.apk` from the assets below.
-            2. On your Android phone go to **Settings → Security → Unknown Sources** and enable it.
-            3. Open the downloaded APK file and tap **Install**.
+            1. Download `AutoChipFinder-v1.0.0.apk` below.
+            2. On your phone: **Settings → Security → Unknown Sources** → Enable.
+            3. Tap the downloaded APK → **Install**.
 
             #### ✨ Features
-            - 100% offline chip lookup — no internet required after install
+            - 100% offline chip lookup
             - Instant indexed search by Part Number or Chip Number
             - Animated splash screen with custom logo
           files: dist-apk/AutoChipFinder-v1.0.0.apk
