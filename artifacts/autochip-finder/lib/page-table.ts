@@ -7,12 +7,35 @@ export interface ParsedPageTable {
 
 const HEADER_NAMES = new Set([
   'brand',
-  'chip',
+  'make',
+  'maker',
+  'manufacturer',
+  'company',
+  'car',
+  'vehicle',
   'model',
+  'series',
+  'type',
   'module',
+  'system',
+  'application',
   'number',
   'partnumber',
-  'series',
+  'partno',
+  'part',
+  'pn',
+  'ref',
+  'unit',
+  'chip',
+  'chipnumber',
+  'chipno',
+  'eeprom',
+  'mcu',
+  'micro',
+  'processor',
+  'mask',
+  'memory',
+  'device',
   'year',
   'yearchip',
 ]);
@@ -30,7 +53,7 @@ function splitColumns(line: string): string[] {
 }
 
 function expandJoinedHeaderCells(cells: string[]): string[] {
-  const labels = /Part\s+number|Year\s*\/?\s*chip|Series|Brand|Module|Model|Number|Chip/gi;
+  const labels = /Part\s*(?:number|no|\#)?|Chip\s*(?:number|no|\#)?|Year\s*\/?\s*chip|Manufacturer|Company|Vehicle|Brand|Module|Model|Series|Number|EEPROM|MCU|Device|Memory|Mask|Type|Year/gi;
   return cells.flatMap((cell) => {
     const parts = cell.match(labels);
     if (!parts || normalizeHeader(parts.join('')) !== normalizeHeader(cell)) return [cell];
@@ -55,6 +78,15 @@ function getHeaderRow(text: string): { index: number; cells: string[] } | null {
 
 export function findPageTableHeaders(text: string): string[] | null {
   return getHeaderRow(text)?.cells ?? null;
+}
+
+export function findDocumentTableHeaders(pages: { text: string }[]): string[] | null {
+  const checkPages = pages.slice(0, 6);
+  for (const page of checkPages) {
+    const headers = findPageTableHeaders(page.text);
+    if (headers) return headers;
+  }
+  return null;
 }
 
 function rowWithMissingModule(

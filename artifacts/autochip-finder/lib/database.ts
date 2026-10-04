@@ -1,6 +1,6 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import seedIndex from '@/data/seed-index.json';
-import { findPageTableHeaders, parsePageTable } from '@/lib/page-table';
+import { findDocumentTableHeaders, findPageTableHeaders, parsePageTable } from '@/lib/page-table';
 
 export type ToolName = string;
 export type IndexStatus = 'processing' | 'ready' | 'no-text' | 'failed';
@@ -117,6 +117,19 @@ export function normalizeText(value: string): string {
   return value.normalize('NFKD').toLocaleLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+const CHIP_REGEX = /\b((?:24|25|93|95|35)[A-Z0-9]{2,5}|MC9S12[A-Z0-9]+|9S12[A-Z0-9]+|SPC56[A-Z0-9]+|MAC[0-9]+|MB9[0-9][A-Z0-9]+|R5F[0-9A-Z]+|PIC[0-9A-Z]+|ATMEGA[0-9]+|70F[0-9]+|u?PD78[0-9A-Z]+|XC2[0-9A-Z]+|TMS[0-9A-Z]+|NEC)\b/i;
+
+const AUTOMOTIVE_BRANDS = new Set([
+  'acura', 'audi', 'bmw', 'buick', 'cadillac', 'cadilac', 'chery', 'chevrolet',
+  'chrysler', 'citroen', 'dacia', 'daewoo', 'datsun', 'dodge', 'ducati', 'fiat',
+  'ford', 'geely', 'great wall', 'greatwall', 'honda', 'hyundai', 'infiniti',
+  'isuzu', 'iveco', 'jaguar', 'jeep', 'kia', 'lada', 'lamborghini', 'land rover',
+  'landrover', 'lexus', 'lifan', 'mazda', 'mercedes', 'mercedes-benz', 'mg',
+  'mitsubishi', 'nissan', 'opel', 'peugeot', 'porsche', 'renault', 'saab', 'seat',
+  'skoda', 'smart', 'ssangyong', 'ssang yong', 'subaru', 'suzuki', 'toyota',
+  'volkswagen', 'vw', 'volvo', 'aprilia', 'byd', 'haval', 'hummer'
+]);
+
 export function mapColumnsToRecord(
   columns: string[],
   cells: string[],
@@ -126,23 +139,63 @@ export function mapColumnsToRecord(
   let partNumber = '';
   let chip = '';
 
+  const matchedIndices = new Set<number>();
+
   columns.forEach((col, idx) => {
     const norm = col.toLowerCase().replace(/[^a-z0-9]/g, '');
     const val = (cells[idx] || '').trim();
-    if (!val) return;
-    if (norm === 'brand') {
+    if (!val || val === '-') return;
+
+    if (/^(brand|company|make|maker|manufacturer|car|vehicle)$/.test(norm)) {
       brand = val;
-    } else if (norm === 'chip' || norm === 'yearchip') {
+      matchedIndices.add(idx);
+    } else if (/^(chip|chipnumber|chipno|eeprom|mcu|micro|processor|mask|memory|device|yearchip)$/.test(norm)) {
       chip = val;
-    } else if (norm === 'partnumber' || norm === 'number') {
+      matchedIndices.add(idx);
+    } else if (/^(partnumber|partno|part|pn|number|ref|unit)$/.test(norm)) {
       partNumber = val;
-    } else if (norm === 'model' || norm === 'series' || norm === 'module') {
+      matchedIndices.add(idx);
+    } else if (/^(model|series|module|type|system|application)$/.test(norm)) {
       model = model ? `${model} ${val}` : val;
-    } else {
-      if (!partNumber) partNumber = val;
-      else if (!model) model = val;
+      matchedIndices.add(idx);
     }
   });
+
+  // For unmapped cells or generic fallback columns (Column 1, Column 2, etc.):
+  cells.forEach((val, idx) => {
+    if (matchedIndices.has(idx)) return;
+    val = (val || '').trim();
+    if (!val || val === '-') return;
+
+    if (!chip && CHIP_REGEX.test(val)) {
+      const m = val.match(CHIP_REGEX);
+      chip = m ? m[0] : val;
+      return;
+    }
+
+    const valLower = val.toLowerCase();
+    if (!brand && AUTOMOTIVE_BRANDS.has(valLower)) {
+      brand = val;
+      return;
+    }
+
+    if (!partNumber) {
+      partNumber = val;
+    } else if (!model) {
+      model = val;
+    }
+  });
+
+  // If model was populated from a 'Model' column that contains the part number (like in iProg list)
+  if (model && !partNumber) {
+    const match = model.match(/^([A-Za-z0-9\s\-]+?)\s+([A-Z0-9]{3,}[-. ][A-Z0-9\s\.\-]+)$/i);
+    if (match && !/^\d/.test(match[1])) {
+      model = match[1].trim();
+      partNumber = match[2].trim();
+    } else {
+      partNumber = model;
+    }
+  }
 
   return { brand, model, partNumber, chip };
 }
@@ -593,7 +646,7 @@ export async function replacePageIndex(
       documentId,
     );
     if (docRow && pages.length > 0) {
-      const headers = findPageTableHeaders(pages[0].text);
+      const headers = findDocumentTableHeaders(pages);
       for (const page of pages) {
         const table = parsePageTable(page.text, headers);
         for (const row of table.rows) {

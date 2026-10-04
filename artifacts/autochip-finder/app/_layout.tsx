@@ -15,6 +15,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { ActivityIndicator, Image, Platform, Text, View } from 'react-native';
 import { AnimatedSplashScreen } from '@/components/AnimatedSplashScreen';
+import { PdfExtractor } from '@/components/PdfExtractor';
 import colors from '@/constants/colors';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -47,6 +48,9 @@ function RootLayoutNav() {
           <Stack.Screen name="history" />
         </Stack>
       )}
+
+      {/* Headless offline PDF text extraction engine */}
+      <PdfExtractor />
 
       {/* Modern Animated Splash Screen: runs on app opening and smoothly fades out */}
       {!splashFinished && (
