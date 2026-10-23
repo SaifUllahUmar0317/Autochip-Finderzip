@@ -647,8 +647,14 @@ export async function replacePageIndex(
     );
     if (docRow && pages.length > 0) {
       const headers = findDocumentTableHeaders(pages);
+      const docBrand = Array.from(AUTOMOTIVE_BRANDS).find((b) =>
+        docRow.displayName.toLowerCase().includes(b) || docRow.moduleName.toLowerCase().includes(b)
+      ) || '';
+
       for (const page of pages) {
         const table = parsePageTable(page.text, headers);
+        let recordsAdded = 0;
+
         for (const row of table.rows) {
           const rec = mapColumnsToRecord(table.columns, row);
           if (rec.brand || rec.model || rec.partNumber || rec.chip) {
@@ -667,6 +673,59 @@ export async function replacePageIndex(
               rec.model,
               rec.partNumber,
               rec.chip,
+              searchTokens,
+            );
+            recordsAdded++;
+          }
+        }
+
+        // Single-unit diagram page detection (e.g. ECU pinouts, wiring diagrams)
+        if (recordsAdded === 0 && page.text.trim()) {
+          const pageLines = page.text
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter(Boolean);
+
+          const nonNumeric = pageLines.filter((l) => !/^\d+$/.test(l));
+          const uniqueLines = Array.from(new Set(nonNumeric));
+
+          const ECU_OR_PART_RE = /\b((?:EDC|MED|ME|MSV|MSD|MD1|MG1|SIMOS|SID|DCM|EMS|PCR|VISTEON|DELPHI|DENSO|MARELLI|IAW|PSG|BOSCH)[0-9A-Z_.-]*|[A-Z0-9]{4,12}[-. ][A-Z0-9]{3,10}|[A-Z]{2,4}[0-9]{2,6}[A-Z0-9]*)\b/i;
+
+          let unitCode = '';
+          for (const line of uniqueLines) {
+            const match = line.match(ECU_OR_PART_RE);
+            if (match) {
+              unitCode = match[0];
+              break;
+            }
+          }
+
+          if (!unitCode && uniqueLines.length > 0 && uniqueLines.length <= 6) {
+            const candidate = uniqueLines.find((l) => l.length >= 3 && l.length <= 25 && !l.includes('...'));
+            if (candidate) unitCode = candidate;
+          }
+
+          if (unitCode) {
+            const brand = docBrand ? docBrand.toUpperCase() : docRow.moduleName;
+            const model = docRow.displayName;
+            const partNumber = unitCode;
+            const chip = unitCode;
+            const searchTokens = (brand + ' ' + model + ' ' + partNumber + ' ' + chip + ' ' + page.text)
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '');
+
+            await db.runAsync(
+              `INSERT INTO chip_records (documentId, pageNumber, tool, moduleName, displayName, brand, model, partNumber, chip, searchTokens)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              documentId,
+              page.pageNumber,
+              docRow.tool,
+              docRow.moduleName,
+              docRow.displayName,
+              brand,
+              model,
+              partNumber,
+              chip,
               searchTokens,
             );
           }

@@ -1,5 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, Pressable, Share, Text, View, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  Pressable,
+  Share,
+  Text,
+  View,
+  StyleSheet,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
@@ -17,6 +27,7 @@ import {
   type SearchResult,
 } from '@/lib/database';
 import { resolveDocumentUri } from '@/lib/source-files';
+import { renderPdfPageImage } from '@/lib/pdf-index';
 
 export default function ViewerScreen() {
   const router = useRouter();
@@ -38,12 +49,18 @@ export default function ViewerScreen() {
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
 
+  // Diagram rendering state
+  const [activeTab, setActiveTab] = useState<'diagram' | 'text'>('diagram');
+  const [pageImage, setPageImage] = useState<string | null>(null);
+  const [renderingImage, setRenderingImage] = useState(false);
+
   useEffect(() => {
     const safePage = Number.isFinite(routePage) && routePage > 0 ? Math.floor(routePage) : 1;
     setPageNumber(safePage);
     setPageDraft(String(safePage));
   }, [documentId, routePage]);
 
+  // Load document and page text
   useFocusEffect(
     useCallback(() => {
       if (!db || !documentId) return;
@@ -72,17 +89,43 @@ export default function ViewerScreen() {
     }, [db, documentId, pageNumber]),
   );
 
+  // Automatically render the visual diagram for this physical page
+  useEffect(() => {
+    if (!document) return;
+    let cancelled = false;
+    setRenderingImage(true);
+    setPageImage(null);
+
+    void resolveDocumentUri(document)
+      .then((uri) => renderPdfPageImage(uri, pageNumber))
+      .then((dataUrl) => {
+        if (cancelled) return;
+        setPageImage(dataUrl);
+        setRenderingImage(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRenderingImage(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [document, pageNumber]);
+
   const goToPage = (next: number) => {
     if (!document) return;
     const bounded = Math.max(1, Math.min(document.pageCount, Math.floor(next)));
     setPageNumber(bounded);
     setPageDraft(String(bounded));
   };
+
   const submitPage = () => {
     const requested = Number.parseInt(pageDraft, 10);
     if (Number.isFinite(requested)) goToPage(requested);
     else setPageDraft(String(pageNumber));
   };
+
   const openOriginal = async () => {
     if (!document) return;
     setSharing(true);
@@ -108,11 +151,13 @@ export default function ViewerScreen() {
       setSharing(false);
     }
   };
+
   const copyPage = async () => {
     if (!pageText) return;
     await Clipboard.setStringAsync(pageText);
     Alert.alert('Copied', `Extracted text from page ${pageNumber} was copied.`);
   };
+
   const toggleCurrentBookmark = async () => {
     if (!db || !document || !pageText) return;
     const result: SearchResult = {
@@ -134,6 +179,7 @@ export default function ViewerScreen() {
     setIsBookmarked((value) => !value);
     refresh();
   };
+
   const shareExcerpt = () => {
     if (!document || !pageText) return;
     void Share.share({
@@ -143,29 +189,52 @@ export default function ViewerScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <TopBar title="Source page" eyebrow="PDF TEXT INDEX" right={
-        <Pressable accessibilityRole="button" accessibilityLabel={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'} onPress={() => void toggleCurrentBookmark()} style={styles.headerAction} disabled={!pageText}>
-          <Feather name="bookmark" size={19} color={isBookmarked ? colors.primary : colors.foreground} />
-        </Pressable>
-      } />
+      <TopBar
+        title="Page Diagram"
+        eyebrow="PDF VISUAL VIEWER"
+        right={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'}
+            onPress={() => void toggleCurrentBookmark()}
+            style={styles.headerAction}
+            disabled={!pageText && !pageImage}
+          >
+            <Feather name="bookmark" size={19} color={isBookmarked ? colors.primary : colors.foreground} />
+          </Pressable>
+        }
+      />
+
       {loading ? (
         <Surface style={styles.loadingCard}>
-          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Loading the saved source page…</Text>
+          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Loading document...</Text>
         </Surface>
       ) : !document ? (
-        <EmptyState icon="alert-triangle" title="PDF not found" description="This document may have been removed from your library." action={<ActionButton label="Open library" icon="folder" onPress={() => router.push('/(tabs)/library')} />} />
+        <EmptyState
+          icon="alert-triangle"
+          title="PDF not found"
+          description="This document may have been removed from your library."
+          action={<ActionButton label="Open library" icon="folder" onPress={() => router.push('/(tabs)/library')} />}
+        />
       ) : (
         <>
+          {/* Document Banner */}
           <View style={[styles.documentBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.fileIcon, { backgroundColor: colors.accent }]}>
-              <Feather name="file-text" size={18} color={colors.primary} />
+              <Feather name="cpu" size={18} color={colors.primary} />
             </View>
             <View style={styles.documentInfo}>
-              <Text numberOfLines={2} style={[styles.documentTitle, { color: colors.foreground }]}>{document.displayName}</Text>
-              <Text style={[styles.documentMeta, { color: colors.mutedForeground }]}>{document.tool} · {document.moduleName}</Text>
+              <Text numberOfLines={2} style={[styles.documentTitle, { color: colors.foreground }]}>
+                {document.displayName}
+              </Text>
+              <Text style={[styles.documentMeta, { color: colors.mutedForeground }]}>
+                {document.tool} · {document.moduleName}
+              </Text>
             </View>
             <Pill label={document.indexingStatus === 'ready' ? 'Indexed' : document.indexingStatus} tone={document.indexingStatus === 'ready' ? 'success' : 'warning'} />
           </View>
+
+          {/* Page Navigation Controller */}
           <Surface style={styles.pageControl}>
             <Pressable
               accessibilityRole="button"
@@ -198,42 +267,120 @@ export default function ViewerScreen() {
               <Feather name="chevron-right" size={21} color={colors.foreground} />
             </Pressable>
           </Surface>
+
           {query ? (
             <View style={[styles.matchBanner, { backgroundColor: colors.accent }]}>
               <Feather name="search" size={13} color={colors.primary} />
-              <Text numberOfLines={2} style={[styles.matchText, { color: colors.accentForeground }]}>Opened from search: {query}</Text>
+              <Text numberOfLines={2} style={[styles.matchText, { color: colors.accentForeground }]}>
+                Matching Unit / Search: {query}
+              </Text>
             </View>
           ) : null}
-          {pageText ? (
-            <Surface style={styles.sourceCard}>
+
+          {/* Tab Selector: Diagram View vs Table/Text View */}
+          <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Pressable
+              onPress={() => setActiveTab('diagram')}
+              style={[
+                styles.tabItem,
+                activeTab === 'diagram' && { backgroundColor: colors.accent },
+              ]}
+            >
+              <Feather name="image" size={14} color={activeTab === 'diagram' ? colors.primary : colors.mutedForeground} />
+              <Text style={[styles.tabLabel, { color: activeTab === 'diagram' ? colors.primary : colors.mutedForeground }]}>
+                Full Diagram Page
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setActiveTab('text')}
+              style={[
+                styles.tabItem,
+                activeTab === 'text' && { backgroundColor: colors.accent },
+              ]}
+            >
+              <Feather name="file-text" size={14} color={activeTab === 'text' ? colors.primary : colors.mutedForeground} />
+              <Text style={[styles.tabLabel, { color: activeTab === 'text' ? colors.primary : colors.mutedForeground }]}>
+                Text / Table Data
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Tab 1: Full Visual Diagram */}
+          {activeTab === 'diagram' && (
+            <Surface style={styles.diagramCard}>
               <View style={styles.sourceHeading}>
                 <View>
-                  <Text style={[styles.sourceLabel, { color: colors.mutedForeground }]}>Text from this page</Text>
-                  <Text style={[styles.sourcePageTitle, { color: colors.foreground }]}>Original page {pageNumber}</Text>
+                  <Text style={[styles.sourceLabel, { color: colors.mutedForeground }]}>High Resolution Diagram</Text>
+                  <Text style={[styles.sourcePageTitle, { color: colors.foreground }]}>Diagram Page {pageNumber}</Text>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel="Share source page text" onPress={shareExcerpt} style={styles.actionIcon}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Share excerpt" onPress={shareExcerpt} style={styles.actionIcon}>
                   <Feather name="share-2" size={17} color={colors.mutedForeground} />
                 </Pressable>
               </View>
-              <ExtractedPageTable
-                text={pageText}
-                headerText={headerText || (findPageTableHeaders(pageText) ? pageText : '')}
-                query={query}
-                colors={colors}
-              />
-              <ActionButton label="Copy page text" icon="copy" variant="secondary" compact onPress={() => void copyPage()} />
-            </Surface>
-          ) : (
-            <Surface style={styles.noTextCard}>
-              <EmptyState
-                icon="file-text"
-                title={document.indexingStatus === 'no-text' ? 'This PDF has no text layer' : 'Page text is not indexed'}
-                description="The source PDF is still available, but AutoChip Finder cannot search this page until it has selectable text. Scanned-page OCR is not included."
-              />
+
+              {renderingImage ? (
+                <View style={styles.diagramLoadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={[styles.diagramLoadingText, { color: colors.mutedForeground }]}>
+                    Rendering diagram page...
+                  </Text>
+                </View>
+              ) : pageImage ? (
+                <View style={[styles.imageWrapper, { borderColor: colors.border, backgroundColor: '#ffffff' }]}>
+                  <Image
+                    source={{ uri: pageImage }}
+                    style={styles.diagramImage}
+                    resizeMode="contain"
+                    accessibilityLabel={`Diagram for page ${pageNumber}`}
+                  />
+                </View>
+              ) : (
+                <View style={styles.diagramLoadingContainer}>
+                  <Text style={{ color: colors.mutedForeground, textAlign: 'center' }}>
+                    Visual diagram rendering complete or unavailable. You can also view the original PDF below.
+                  </Text>
+                </View>
+              )}
             </Surface>
           )}
-          <ActionButton label="Share or open original PDF" icon="external-link" loading={sharing} variant="primary" onPress={() => void openOriginal()} />
-          <Text style={[styles.viewerNote, { color: colors.mutedForeground }]}>This view shows text extracted from the specified physical PDF page. Use the original PDF to inspect diagrams and page layout.</Text>
+
+          {/* Tab 2: Extracted Text / Table View */}
+          {activeTab === 'text' && (
+            pageText ? (
+              <Surface style={styles.sourceCard}>
+                <View style={styles.sourceHeading}>
+                  <View>
+                    <Text style={[styles.sourceLabel, { color: colors.mutedForeground }]}>Text from this page</Text>
+                    <Text style={[styles.sourcePageTitle, { color: colors.foreground }]}>Original page {pageNumber}</Text>
+                  </View>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Share source page text" onPress={shareExcerpt} style={styles.actionIcon}>
+                    <Feather name="share-2" size={17} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+                <ExtractedPageTable
+                  text={pageText}
+                  headerText={headerText || (findPageTableHeaders(pageText) ? pageText : '')}
+                  query={query}
+                  colors={colors}
+                />
+                <ActionButton label="Copy page text" icon="copy" variant="secondary" compact onPress={() => void copyPage()} />
+              </Surface>
+            ) : (
+              <Surface style={styles.noTextCard}>
+                <EmptyState
+                  icon="file-text"
+                  title={document.indexingStatus === 'no-text' ? 'This PDF has no text layer' : 'Page text is not indexed'}
+                  description="Use the Full Diagram Page tab to inspect diagrams and pinouts."
+                />
+              </Surface>
+            )
+          )}
+
+          <ActionButton label="Open original PDF in external viewer" icon="external-link" loading={sharing} variant="primary" onPress={() => void openOriginal()} />
+          <Text style={[styles.viewerNote, { color: colors.mutedForeground }]}>
+            Full high-definition page diagrams are rendered directly from the offline PDF document.
+          </Text>
         </>
       )}
     </Screen>
@@ -262,6 +409,53 @@ const styles = StyleSheet.create({
   pageTotal: { fontSize: 11 },
   matchBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 9 },
   matchText: { fontSize: 13, fontWeight: '500', flex: 1 },
+  tabBar: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 4,
+    gap: 4,
+  },
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  tabLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  diagramCard: {
+    padding: 12,
+    gap: 12,
+  },
+  diagramLoadingContainer: {
+    height: 380,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  diagramLoadingText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  imageWrapper: {
+    width: '100%',
+    height: 480,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  diagramImage: {
+    width: '100%',
+    height: '100%',
+  },
   sourceCard: { gap: 12, padding: 12 },
   sourceHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sourceLabel: { fontSize: 14, fontWeight: '600' },

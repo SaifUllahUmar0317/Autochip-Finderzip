@@ -2,15 +2,26 @@ import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
-import { registerPdfExtractor, type IndexedPage } from '@/lib/pdf-index';
+import { registerPdfExtractor, registerPdfRenderer, type IndexedPage } from '@/lib/pdf-index';
 import { PDFJS_BUNDLE_HTML } from '@/lib/pdfjs-bundle';
 
-interface PendingJob {
+interface PendingExtractJob {
+  kind: 'extract';
   uri: string;
   onProgress?: (current: number, total: number) => void;
   resolve: (pages: IndexedPage[]) => void;
   reject: (error: Error) => void;
 }
+
+interface PendingRenderJob {
+  kind: 'render';
+  uri: string;
+  pageNumber: number;
+  resolve: (dataUrl: string) => void;
+  reject: (error: Error) => void;
+}
+
+type PendingJob = PendingExtractJob | PendingRenderJob;
 
 export function PdfExtractor() {
   const webViewRef = useRef<WebView>(null);
@@ -31,8 +42,17 @@ export function PdfExtractor() {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Send to WebView
-      // For large PDFs, we can chunk if needed; 500KB chunk size is safe for any bridge
+      if (job.kind === 'render') {
+        webViewRef.current?.injectJavaScript(`
+          if (window.renderPdfPage) {
+            window.renderPdfPage(${JSON.stringify(base64)}, ${job.pageNumber});
+          }
+          true;
+        `);
+        return;
+      }
+
+      // Extraction job
       const CHUNK_SIZE = 400000;
       if (base64.length <= CHUNK_SIZE) {
         webViewRef.current?.injectJavaScript(`
@@ -64,13 +84,21 @@ export function PdfExtractor() {
   useEffect(() => {
     registerPdfExtractor((uri: string, onProgress?: (current: number, total: number) => void) => {
       return new Promise<IndexedPage[]>((resolve, reject) => {
-        jobQueueRef.current.push({ uri, onProgress, resolve, reject });
+        jobQueueRef.current.push({ kind: 'extract', uri, onProgress, resolve, reject });
+        void processNextJob();
+      });
+    });
+
+    registerPdfRenderer((uri: string, pageNumber: number) => {
+      return new Promise<string>((resolve, reject) => {
+        jobQueueRef.current.push({ kind: 'render', uri, pageNumber, resolve, reject });
         void processNextJob();
       });
     });
 
     return () => {
       registerPdfExtractor(null);
+      registerPdfRenderer(null);
     };
   }, []);
 
@@ -81,26 +109,33 @@ export function PdfExtractor() {
         isReadyRef.current = true;
         void processNextJob();
       } else if (data.type === 'progress') {
-        if (currentJobRef.current?.onProgress) {
-          currentJobRef.current.onProgress(data.current, data.total);
+        if (currentJobRef.current && currentJobRef.current.kind === 'extract') {
+          currentJobRef.current.onProgress?.(data.current, data.total);
         }
       } else if (data.type === 'done') {
-        if (currentJobRef.current) {
+        if (currentJobRef.current && currentJobRef.current.kind === 'extract') {
           const job = currentJobRef.current;
           currentJobRef.current = null;
           job.resolve(data.pages || []);
           void processNextJob();
         }
-      } else if (data.type === 'error') {
+      } else if (data.type === 'pageImage') {
+        if (currentJobRef.current && currentJobRef.current.kind === 'render') {
+          const job = currentJobRef.current;
+          currentJobRef.current = null;
+          job.resolve(data.dataUrl);
+          void processNextJob();
+        }
+      } else if (data.type === 'error' || data.type === 'renderError') {
         if (currentJobRef.current) {
           const job = currentJobRef.current;
           currentJobRef.current = null;
-          job.reject(new Error(data.message || 'PDF extraction failed.'));
+          job.reject(new Error(data.message || 'Operation failed.'));
           void processNextJob();
         }
       }
     } catch (e) {
-      // ignore non-json messages
+      // ignore
     }
   };
 
